@@ -1,0 +1,38 @@
+name: pdi-melanoma
+
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: infra/python.Dockerfile
+      args:
+        APP: api
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../models:/app/models:ro
+    environment:
+      PDI_MODELS_DIR: /app/models
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/python.Dockerfile
+      args:
+        APP: web
+    command: >
+      streamlit run apps/web/src/web/app.py
+      --server.address 0.0.0.0 --server.port 8501 --server.headless true
+    ports:
+      - "8501:8501"
+    environment:
+      PDI_API_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy

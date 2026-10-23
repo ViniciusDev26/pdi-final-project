@@ -1,5 +1,6 @@
-# Dataset (baixar do Kaggle, ~120 MB / 10 mil imagens)
-melanoma_cancer_dataset/
+# Dados locais (dataset do Kaggle e splits gerados)
+data/*
+!data/.gitkeep
 
 # Arquivo intermediário do gerador do PDF
 docs/*.html
@@ -12,7 +13,8 @@ venv/
 .ipynb_checkpoints/
 
 # Artefatos de treinamento
-models/
+models/*
+!models/.gitkeep
 runs/
 *.pt
 *.pth
