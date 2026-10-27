@@ -7,9 +7,9 @@ técnicas tradicionais de PDI com redes neurais. A proposta completa está em
 
 ## Entregas
 
-| Etapa | Documento | Enunciado |
-|---|---|---|
-| 1 — Equipe, público-alvo e proposta | [PDI_Etapa1_Equipe_e_Proposta.pdf](docs/PDI_Etapa1_Equipe_e_Proposta.pdf) | [PDF da professora](<[PDI] - Etapa 1 - D. Equipe e Proposta.docx (1).pdf>) |
+| Etapa | Documento | Apresentação | Enunciado |
+|---|---|---|---|
+| 1 — Equipe, público-alvo e proposta | [PDI_Etapa1_Equipe_e_Proposta.pdf](docs/PDI_Etapa1_Equipe_e_Proposta.pdf) | [PDI_Etapa1_Apresentacao.pdf](docs/PDI_Etapa1_Apresentacao.pdf) | [Instruções da professora](<docs/[PDI] - Etapa 1 - instruções.pdf>) |
 
 O PDF da Etapa 1 é gerado a partir de [`docs/gerar_etapa1.py`](docs/gerar_etapa1.py):
 edite o texto no script e rode `just docs-etapa1`.
