@@ -132,8 +132,9 @@ def secao_publico():
         + p("A solução será aplicada na **triagem de lesões de pele a partir de imagens de "
             "dermatoscopia** (fotografias ampliadas da lesão obtidas com dermatoscópio, inclusive "
             "modelos de baixo custo acopláveis a smartphones), no contexto das **UBS de Fortaleza/CE**. "
-            "A capital cearense está próxima à linha do Equador e recebe radiação ultravioleta "
-            "elevada durante todo o ano, o que agrava o risco populacional.")
+            "Localizada a cerca de 3° de latitude sul, próxima à linha do Equador, a capital "
+            "cearense recebe radiação solar intensa ao longo de todo o ano, o que torna a "
+            "exposição ultravioleta um fator de risco constante para a população.")
         + p("O sistema **não pretende substituir o diagnóstico médico nem a biópsia**: seu papel é "
             "indicar se uma lesão apresenta características visuais **suspeitas de malignidade**, "
             "auxiliando o profissional a priorizar encaminhamentos ao dermatologista.")
@@ -170,11 +171,13 @@ def secao_proposta():
             "congestionam as filas, e casos graves que demoram a ser identificados.")
         + p("O diagnóstico dermatológico é essencialmente **visual**: o especialista avalia "
             "assimetria, irregularidade da borda, variedade de cores, tamanho e textura da lesão — "
-            "a chamada regra ABCD. Esses critérios podem ser medidos computacionalmente a partir "
+            "a chamada regra ABCD (NACHBAR et al., 1994). Esses critérios podem ser medidos computacionalmente a partir "
             "da imagem, o que torna o Processamento Digital de Imagens (PDI) pertinente: técnicas "
             "de PDI permitem remover interferências (pelos, reflexos, variação de iluminação), "
             "isolar a lesão da pele ao redor e extrair medidas objetivas de forma, cor e textura, "
-            "que alimentam um classificador.")
+            "que alimentam um classificador. Além disso, redes neurais convolucionais já "
+            "demonstraram desempenho comparável ao de dermatologistas na classificação de lesões "
+            "de pele (ESTEVA et al., 2017), o que reforça o potencial da abordagem.")
         + p("Diante disso, é de grande importância dispor de meios para uma análise prévia das "
             "lesões de pele. Este projeto propõe uma ferramenta de **apoio à triagem**, baseada em "
             "PDI e aprendizado de máquina, capaz de diferenciar lesões benignas de melanomas: ela "
@@ -182,7 +185,7 @@ def secao_proposta():
             "interpretáveis e estima se a lesão é suspeita de malignidade, apresentando ao "
             "profissional não só o resultado, mas também as evidências visuais que o justificam.")
         + subtitulo("Objetivo Geral")
-        + p("Desenvolver e avaliar um protótipo de apoio à triagem do câncer de pele que, a partir "
+        + p("Desenvolver e avaliar um protótipo de apoio à triagem do melanoma que, a partir "
             "de imagens dermatoscópicas, **segmente a lesão e a classifique como benigna ou maligna (melanoma)**, "
             "comparando uma abordagem baseada em técnicas tradicionais de PDI (pré-processamento, "
             "segmentação e extração de características ABCD, de cor e de textura) com uma abordagem "
@@ -230,7 +233,7 @@ def secao_proposta():
             ("Conversão entre espaços de cores (RGB → HSV, CIELab)",
              "Separação entre luminosidade e cromaticidade.",
              "Facilita separar lesão e pele e medir a variedade de cores (critério C da regra ABCD)."),
-            ("Normalização de cor (Shades of Gray)",
+            ("Normalização de cor (Shades of Gray; FINLAYSON; TREZZI, 2004)",
              "Correção da cor da iluminação de cada dermatoscópio.",
              "Reduz diferenças entre equipamentos, tornando as medidas de cor comparáveis."),
             ("Histograma e realce de contraste (CLAHE)",
@@ -240,7 +243,7 @@ def secao_proposta():
              "Suavização de ruído e pequenas texturas da pele.",
              "Melhora a estabilidade da limiarização e da detecção de bordas."),
             ("Operações morfológicas (black-hat, abertura, fechamento) + inpainting",
-             "Detecção e remoção de pelos (método DullRazor); limpeza das máscaras.",
+             "Detecção e remoção de pelos (método DullRazor; LEE et al., 1997); limpeza das máscaras.",
              "Pelos sobre a lesão distorcem borda, cor e textura; removê-los reduz falsos padrões."),
             ("Limiarização global e adaptativa (Otsu)",
              "Separação automática entre lesão e pele.",
