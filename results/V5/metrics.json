@@ -1,0 +1,62 @@
+{
+  "id": "V5",
+  "grupo": "V",
+  "descricao": "Vinheta artificial em 50 benignas: variação da probabilidade",
+  "tipo": "synthetic_vignette",
+  "configuracao": null,
+  "grupos_caracteristicas": null,
+  "commit": "6ee6538",
+  "ambiente": {
+    "python": "3.12.16",
+    "plataforma": "Linux-7.2.15-1-omarchy-x86_64-with-glibc2.41",
+    "numpy": "2.5.4",
+    "opencv": "5.0.0",
+    "scikit-learn": "1.9.1",
+    "torch": "2.14.1+cu130",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 4060 Ti",
+    "driver": "615.78.08"
+  },
+  "iniciado_em": "2026-11-11T02:21:48+00:00",
+  "finalizado_em": "2026-11-11T02:21:57+00:00",
+  "duracao_s": 9.6,
+  "n": 50,
+  "modelos": {
+    "C2": {
+      "p1_ligada": true,
+      "variacao_media": 0.010701686839187423,
+      "ic95": [
+        -0.011242927427617054,
+        0.03747715900323364
+      ],
+      "viraram_malignas": 4
+    },
+    "L1": {
+      "p1_ligada": false,
+      "variacao_media": 0.6735308882194768,
+      "ic95": [
+        0.6300138287088096,
+        0.7130187574682099
+      ],
+      "viraram_malignas": 45
+    },
+    "C6": {
+      "p1_ligada": false,
+      "variacao_media": 0.9079207396008832,
+      "ic95": [
+        0.8386249951659532,
+        0.9620746820891901
+      ],
+      "viraram_malignas": 46
+    },
+    "C7": {
+      "p1_ligada": true,
+      "variacao_media": 0.5061601037833304,
+      "ic95": [
+        0.41841987676616915,
+        0.5875335856331366
+      ],
+      "viraram_malignas": 31
+    }
+  }
+}

@@ -1,0 +1,185 @@
+{
+  "id": "V1",
+  "grupo": "V",
+  "descricao": "Classificador só com o indicador \"tem vinheta\"",
+  "tipo": "vignette_shortcut",
+  "configuracao": null,
+  "grupos_caracteristicas": null,
+  "commit": "6ee6538",
+  "ambiente": {
+    "python": "3.12.16",
+    "plataforma": "Linux-7.2.15-1-omarchy-x86_64-with-glibc2.41",
+    "numpy": "2.5.4",
+    "opencv": "5.0.0",
+    "scikit-learn": "1.9.1",
+    "torch": "2.14.1+cu130",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 4060 Ti",
+    "driver": "615.78.08"
+  },
+  "iniciado_em": "2026-11-11T02:17:08+00:00",
+  "finalizado_em": "2026-11-11T02:17:08+00:00",
+  "duracao_s": 0.9,
+  "limiar": 0.3978697111687594,
+  "validacao": {
+    "auc": 0.6361689800236794,
+    "sensibilidade": 1.0,
+    "especificidade": 0.0,
+    "precisao": 0.47913769123783034,
+    "f1": 0.6478608368594265,
+    "acuracia_balanceada": 0.5,
+    "acuracia": 0.47913769123783034
+  },
+  "teste": {
+    "auc": {
+      "valor": 0.7039919839679358,
+      "ic95": [
+        0.6818712085120388,
+        0.7240539609875187
+      ]
+    },
+    "sensibilidade": {
+      "valor": 1.0,
+      "ic95": [
+        1.0,
+        1.0
+      ]
+    },
+    "especificidade": {
+      "valor": 0.0,
+      "ic95": [
+        0.0,
+        0.0
+      ]
+    },
+    "precisao": {
+      "valor": 0.5005005005005005,
+      "ic95": [
+        0.4704454454454454,
+        0.5305305305305306
+      ]
+    },
+    "f1": {
+      "valor": 0.66711140760507,
+      "ic95": [
+        0.6398679197511513,
+        0.6932635709614127
+      ]
+    },
+    "acuracia_balanceada": {
+      "valor": 0.5,
+      "ic95": [
+        0.5,
+        0.5
+      ]
+    },
+    "acuracia": {
+      "valor": 0.5005005005005005,
+      "ic95": [
+        0.4704454454454454,
+        0.5305305305305306
+      ]
+    },
+    "matriz_confusao": [
+      [
+        0,
+        499
+      ],
+      [
+        0,
+        500
+      ]
+    ],
+    "n": 999,
+    "positivos": 500
+  },
+  "teste_sem_vinheta": {
+    "auc": {
+      "valor": 0.5,
+      "ic95": [
+        0.5,
+        0.5
+      ]
+    },
+    "sensibilidade": {
+      "valor": 1.0,
+      "ic95": [
+        1.0,
+        1.0
+      ]
+    },
+    "especificidade": {
+      "valor": 0.0,
+      "ic95": [
+        0.0,
+        0.0
+      ]
+    },
+    "precisao": {
+      "valor": 0.3710292249047014,
+      "ic95": [
+        0.33796060991105464,
+        0.40533672172808133
+      ]
+    },
+    "f1": {
+      "valor": 0.541241890639481,
+      "ic95": [
+        0.5051876496268132,
+        0.5768535262206148
+      ]
+    },
+    "acuracia_balanceada": {
+      "valor": 0.5,
+      "ic95": [
+        0.5,
+        0.5
+      ]
+    },
+    "acuracia": {
+      "valor": 0.3710292249047014,
+      "ic95": [
+        0.33796060991105464,
+        0.40533672172808133
+      ]
+    },
+    "matriz_confusao": [
+      [
+        0,
+        495
+      ],
+      [
+        0,
+        292
+      ]
+    ],
+    "n": 787,
+    "positivos": 292
+  },
+  "roc_teste": {
+    "fpr": [
+      0.0,
+      0.008,
+      1.0
+    ],
+    "tpr": [
+      0.0,
+      0.416,
+      1.0
+    ]
+  },
+  "prevalencia_vinheta": {
+    "test": {
+      "benign": 0.008,
+      "malignant": 0.416
+    },
+    "train": {
+      "benign": 0.0113,
+      "malignant": 0.2919
+    },
+    "val": {
+      "benign": 0.0107,
+      "malignant": 0.283
+    }
+  }
+}
