@@ -26,3 +26,7 @@ runs/
 .DS_Store
 .idea/
 .vscode/
+
+# Saídas dos experimentos (reproduzíveis; vão no pacote do release)
+results/*
+!results/.gitkeep

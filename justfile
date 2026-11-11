@@ -52,3 +52,11 @@ fmt:
 # Regera o PDF da Etapa 1
 docs-etapa1:
     python3 docs/gerar_etapa1.py
+
+# Executa um ou mais cenários congelados (mesmo código que a página Experimentos)
+experimento +ids:
+    uv run --package training python -m training.run_scenario {{ids}}
+
+# Executa todos os cenários, na ordem do plano
+experimentos:
+    uv run --package training python -m training.run_scenario todos

@@ -14,7 +14,7 @@ from pdi import SEGMENTATION_METHODS, STAGES, PipelineConfig, PipelineResult, lo
 from pdi import features as pdi_features
 from pdi.visualize import overlay_contour
 from training.compare import MAX_COMBINATIONS, Combination, compare, figure
-from training.scenarios import SCENARIOS
+from training.scenarios import presets as scenario_presets
 
 app = FastAPI(title="PDI Melanoma API", version="0.2.0")
 predictor: Predictor = DummyPredictor()
@@ -196,7 +196,7 @@ def pipeline_options() -> OptionsOut:
             PresetOut(
                 id=s.id, group=s.group, description=s.description, config=s.pipeline.to_dict()
             )
-            for s in SCENARIOS.values()
+            for s in scenario_presets()
         ],
         max_combinations=MAX_COMBINATIONS,
         feature_groups={g: list(names) for g, names in pdi_features.FEATURE_GROUPS.items()},
