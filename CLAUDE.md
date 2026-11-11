@@ -39,24 +39,26 @@ comparando PDI tradicional com CNN. Visão geral e comandos no [README](README.m
 
 ## Estado (2026-11-10, desktop)
 
-Pronto:
-- Pipeline P0 (sempre ligada) + P1–P5 + S configurável por técnica (`pdi.pipeline`), com
-  técnicas alternativas da seção 6.1; cenários A, L, T, S em `training.scenarios`.
-- P2 corrigido (limiar 40 + alongamento ≥ 4, calibrado em `training.calibrate_p2` com
-  pelos sintéticos de `pdi.artifacts`): apaga 2,6% da lesão em vez de 41%.
-- Características F (`pdi.features`, lista fechada da seção 3.1: 38 valores em 3 grupos);
-  NaN quando a segmentação vem vazia (≈1% numa amostra de 200 imagens de treino).
-- API: `/pipeline/options`, `/pipeline`, `/compare` (com as características F);
-  `/predict` ainda usa o `DummyPredictor` (sem valor diagnóstico).
-- Web: Triagem (com o dummy) e Simulador (modo "uma imagem", com aba Características,
-  sem probabilidade por enquanto).
+Pronto (M1–M4 implementados):
+- `pdi`: P0 + P1–P5 + S configuráveis; P2 corrigido e calibrado (`training.calibrate_p2`);
+  características F (38 valores, `pdi.features`); artefatos sintéticos (`pdi.artifacts`).
+- `experiments/`: listas fixas geradas por `training.experiment_lists` (não refazer).
+- Engine: `training.run_scenario` (todos os 32 cenários), `training.report`, cache do
+  pipeline por configuração em `results/_cache/` (invalidado quando o código de `pdi` muda).
+- CNN: `training.cnn` (protocolo 5.7, Grad-CAM); ~22 s por época na 4060 Ti.
+- API: pipeline/simulador, `/annotations`, `/scenarios`, `/jobs` (fila persistente em
+  `results/_fila.json`, sobrevive a reinício), `/results`.
+- Web: Triagem (dummy), Simulador, Experimentos, Resultados, Anotação.
+- Docker: `just up-gpu` (override `infra/docker-compose.gpu.yml`, GPU por CDI).
 
-Próximo (marcos da seção 11 do plano):
-- **M1 (restante):** página Anotação.
-- **M3:** engine de cenários + fila na API + páginas Experimentos e Resultados;
-  cenários tradicionais.
-- **M4:** CNN (EfficientNet-B0, protocolo da seção 5.7) no desktop; Docker Compose com
-  GPU (arquivo de override separado, para o compose continuar funcionando sem NVIDIA).
+Próximo:
+- Equipe: anotar as 80 máscaras (página Anotação) → então rodar S1–S4 e V4.
+- **M5:** modelo da Triagem pela regra da seção 2 (substituir o `DummyPredictor`, com
+  Grad-CAM e indicadores ABCD), página Base de dados, probabilidade no simulador para
+  combinações com modelo treinado, saídas visuais da seção 5.6.
+- **M6/M7:** modo leitura (pacote de modelos e resultados), README, release, slides.
 
 Problemas conhecidos:
 - Limiarização adaptativa (S2/S4) fragmenta lesões grandes.
+- Em desenvolvimento (não oficial), A0 (imagem bruta) teve AUC maior que A5 no RF; ver o
+  impacto por etapa na página Resultados antes de fixar o pipeline dos cenários C.

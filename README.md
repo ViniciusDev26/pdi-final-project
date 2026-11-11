@@ -18,15 +18,17 @@ edite o texto no script e rode `just docs-etapa1`.
 
 ```
 apps/
-  api/        FastAPI de inferência (/health, /predict)
-  training/   preparação de dados, treinamento e avaliação
-  web/        interface Streamlit (consome a API por HTTP)
+  api/        FastAPI: pipeline, simulador, anotação, fila de cenários, resultados
+  training/   cenários congelados, treino (RF, SVM, CNN), avaliação e relatório
+  web/        sistema web Streamlit (Triagem, Simulador, Experimentos, Resultados, Anotação)
 packages/
-  pdi/        biblioteca de PDI compartilhada (pré-processamento, segmentação, features)
-infra/        Dockerfile e docker-compose (API + web)
+  pdi/        biblioteca de PDI compartilhada (P0–P5, segmentação, características, artefatos)
+infra/        Dockerfile, docker-compose (CPU) e override com GPU
+experiments/  listas fixas de IDs e máscaras anotadas (versionadas)
 data/         dataset e splits locais (fora do git)
-models/       modelos exportados pelo treino (fora do git)
-docs/         documentos das etapas
+results/      saídas dos cenários: métricas, predições, modelos e logs (fora do git)
+models/       modelos exportados (fora do git)
+docs/         documentos das etapas e plano experimental
 ```
 
 É um monorepo com **uv workspaces**: um único `.venv` e um único `uv.lock` na
@@ -68,7 +70,10 @@ sejam justas.
 | `just` | lista os comandos |
 | `just api` | sobe a API em http://localhost:8000 (docs em `/docs`) |
 | `just web` | sobe o front em http://localhost:8501 (com a API rodando) |
-| `just up` | sobe API + front via Docker Compose |
+| `just up` | sobe API + front via Docker Compose (só CPU) |
+| `just up-gpu` | sobe o sistema no servidor de experimentos, com a GPU no contêiner da API |
+| `just experimento <ID>` | executa um cenário (atalho; a página Experimentos faz o mesmo) |
+| `just experimentos` | executa todos os cenários |
 | `just test` | roda os testes |
 | `just lint` / `just fmt` | verifica / corrige lint e formatação (ruff) |
 | `just sync` | sincroniza dependências após editar algum `pyproject.toml` |
@@ -76,10 +81,21 @@ sejam justas.
 
 Para adicionar uma dependência a um app: `uv add --package training <pacote>`.
 
-## Treinamento local
+## Experimentos
 
-O treino roda localmente. `training.device.get_device()` escolhe a GPU da Apple
-(MPS), CUDA ou CPU automaticamente.
+O plano congelado está em
+[`docs/PDI_Etapa2_Plano_Experimental.md`](docs/PDI_Etapa2_Plano_Experimental.md). Todos os
+cenários (A, L, T, S, C, V) são executados pela página **Experimentos** do sistema web: a
+API os coloca numa fila e roda um por vez num processo separado, gravando em
+`results/<ID>/` o `metrics.json` (métricas com IC 95%, commit e ambiente), as predições, o
+modelo e o log. A página **Resultados** consolida tudo (impacto por etapa, ROC, viés,
+figuras para os slides). Cenários S e V4 dependem das máscaras desenhadas na página
+**Anotação**.
+
+**Números oficiais só do servidor de experimentos** (Linux, RTX 4060 Ti), via
+`just up-gpu`. A GPU é repassada ao contêiner por CDI (`nvidia-ctk cdi generate`). Em
+outras máquinas o mesmo código roda; `training.device.get_device()` escolhe CUDA, MPS ou
+CPU.
 
 ## Contrato entre treino e API
 
