@@ -17,7 +17,7 @@ sync:
 
 # Baixa o dataset do Kaggle para data/ (requer token do Kaggle)
 data-download:
-    uvx kaggle datasets download -d {{kaggle_dataset}} -p data --unzip
+    uvx --with six kaggle datasets download -d {{kaggle_dataset}} -p data --unzip
 
 # Verifica o dataset, remove duplicatas e gera data/splits.csv
 data-prepare *args:
