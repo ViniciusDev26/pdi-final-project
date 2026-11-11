@@ -86,20 +86,6 @@ def environment() -> dict:
     return env
 
 
-def _jsonable(obj):
-    if isinstance(obj, dict):
-        return {str(k): _jsonable(v) for k, v in obj.items()}
-    if isinstance(obj, list | tuple):
-        return [_jsonable(v) for v in obj]
-    if isinstance(obj, np.integer):
-        return int(obj)
-    if isinstance(obj, np.floating | float):
-        return None if np.isnan(obj) or np.isinf(obj) else float(obj)
-    if isinstance(obj, np.bool_):
-        return bool(obj)
-    return obj
-
-
 def no_vignette_paths() -> set[str]:
     return set(pd.read_csv(cfg.EXPERIMENTS_DIR / "teste_sem_vinheta.csv")["path"])
 
@@ -401,7 +387,8 @@ def run_scenario(sid: str) -> dict:
         "duracao_s": round(time.perf_counter() - t0, 1),
         **body,
     }
-    (out / "metrics.json").write_text(json.dumps(_jsonable(metrics), ensure_ascii=False, indent=2))
+    text = json.dumps(evaluation.to_jsonable(metrics), ensure_ascii=False, indent=2)
+    (out / "metrics.json").write_text(text)
     status.write(
         sid, state="concluido", progress=1.0, message="concluído", finalizado_em=status.now()
     )

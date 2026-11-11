@@ -1,5 +1,6 @@
 import json
 import math
+from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
 import numpy as np
@@ -7,7 +8,7 @@ from fastapi import FastAPI, Form, HTTPException, UploadFile
 from PIL import UnidentifiedImageError
 from pydantic import BaseModel
 
-from api import annotations
+from api import annotations, experiments
 from api.imaging import png_b64
 from api.predictor import DummyPredictor, Predictor
 from pdi import SEGMENTATION_METHODS, STAGES, PipelineConfig, PipelineResult, load_rgb, run
@@ -16,9 +17,17 @@ from pdi.visualize import overlay_contour
 from training.compare import MAX_COMBINATIONS, Combination, compare, figure
 from training.scenarios import presets as scenario_presets
 
-app = FastAPI(title="PDI Melanoma API", version="0.2.0")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    experiments.queue.start()
+    yield
+
+
+app = FastAPI(title="PDI Melanoma API", version="0.3.0", lifespan=lifespan)
 predictor: Predictor = DummyPredictor()
 app.include_router(annotations.router)
+app.include_router(experiments.router)
 
 
 # ---------------------------------------------------------------- esquemas

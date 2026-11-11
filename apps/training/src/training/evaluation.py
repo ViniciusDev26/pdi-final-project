@@ -110,3 +110,18 @@ def roc_points(y: np.ndarray, p: np.ndarray, max_points: int = 200) -> dict[str,
         keep = np.unique(np.linspace(0, len(fpr) - 1, max_points).astype(int))
         fpr, tpr = fpr[keep], tpr[keep]
     return {"fpr": fpr.round(4).tolist(), "tpr": tpr.round(4).tolist()}
+
+
+def to_jsonable(obj):
+    """Converte tipos do numpy e troca NaN/infinito por None (JSON válido)."""
+    if isinstance(obj, dict):
+        return {str(k): to_jsonable(v) for k, v in obj.items()}
+    if isinstance(obj, list | tuple):
+        return [to_jsonable(v) for v in obj]
+    if isinstance(obj, np.integer):
+        return int(obj)
+    if isinstance(obj, np.floating | float):
+        return None if np.isnan(obj) or np.isinf(obj) else float(obj)
+    if isinstance(obj, np.bool_):
+        return bool(obj)
+    return obj
