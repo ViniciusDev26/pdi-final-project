@@ -86,11 +86,8 @@ def main() -> None:
     parser.add_argument("--n", type=int, default=150, help="imagens por divisão")
     args = parser.parse_args()
     res = calibrate(args.n)
-    table = (
-        res.groupby(["split", "threshold", "min_elongation"])[["psnr", "cobertura_pelo", "lesao_apagada"]]
-        .mean()
-        .unstack("split")
-    )
+    metrics = ["psnr", "cobertura_pelo", "lesao_apagada"]
+    table = res.groupby(["split", "threshold", "min_elongation"])[metrics].mean().unstack("split")
     pd.set_option("display.width", 200)
     pd.set_option("display.max_columns", 20)
     print(table.round(4))
