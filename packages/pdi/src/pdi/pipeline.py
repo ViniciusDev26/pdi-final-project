@@ -1,8 +1,10 @@
-"""Pipeline configurável: pré-processamento (P1–P5) seguido da segmentação (S).
+"""Pipeline configurável: normalização da entrada (P0), pré-processamento (P1–P5) e
+segmentação (S).
 
-Cada etapa de pré-processamento pode ser desligada ou executada com uma das técnicas do
-registro `STAGES` (plano experimental, seção 6.1). Isso permite montar os cenários A, L e
-T de docs/PDI_Etapa2_Plano_Experimental.md e qualquer combinação do simulador.
+P0 está sempre ligada e não faz parte da configuração. Cada etapa de pré-processamento
+pode ser desligada ou executada com uma das técnicas do registro `STAGES` (plano
+experimental, seção 6.1). Isso permite montar os cenários A, L e T de
+docs/PDI_Etapa2_Plano_Experimental.md e qualquer combinação do simulador.
 `run` devolve todas as imagens intermediárias e o tempo de cada etapa.
 
 Treino e API devem chamar sempre `run`, para que a inferência aplique exatamente o mesmo
@@ -204,7 +206,8 @@ class StageOutput:
 @dataclass(frozen=True)
 class PipelineResult:
     config: PipelineConfig
-    input: np.ndarray
+    input: np.ndarray  # imagem após P0 (entrada de P1)
+    original_shape: tuple[int, ...]  # shape da imagem recebida, antes de P0
     stages: tuple[StageOutput, ...]
     image: np.ndarray  # imagem pré-processada final (entrada da CNN e das características)
     roi: np.ndarray  # região útil (False sobre a vinheta)
@@ -224,8 +227,12 @@ def run(image: np.ndarray, config: PipelineConfig | None = None) -> PipelineResu
             f"esperada imagem RGB uint8 (H, W, 3); recebida {image.shape} {image.dtype}"
         )
 
-    current = image
-    roi = preprocess.full_roi(image)
+    t0 = time.perf_counter()
+    normalized = preprocess.normalize_input(image)
+    p0_seconds = time.perf_counter() - t0
+
+    current = normalized
+    roi = preprocess.full_roi(current)
     vignette_detected = False
     outputs: list[StageOutput] = []
 
@@ -245,7 +252,7 @@ def run(image: np.ndarray, config: PipelineConfig | None = None) -> PipelineResu
         )
 
     lesion_mask = None
-    timings = {s.id: s.seconds for s in outputs}
+    timings = {"P0": p0_seconds, **{s.id: s.seconds for s in outputs}}
     if config.segmentation is not None:
         t0 = time.perf_counter()
         lesion_mask = segment(current, roi, config.segmentation, config.seg_postprocess)
@@ -253,7 +260,8 @@ def run(image: np.ndarray, config: PipelineConfig | None = None) -> PipelineResu
 
     return PipelineResult(
         config=config,
-        input=image,
+        input=normalized,
+        original_shape=image.shape,
         stages=tuple(outputs),
         image=current,
         roi=roi,

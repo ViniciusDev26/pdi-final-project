@@ -9,6 +9,9 @@ from dataclasses import dataclass
 import cv2
 import numpy as np
 
+# P0 — normalização da entrada
+INPUT_SIZE = 300  # lado (px) das imagens da base; os kernels abaixo foram dimensionados para ele
+
 # P1 — vinheta
 VIGNETTE_DARK_THRESHOLD = 40  # nível de cinza abaixo do qual a borda é considerada vinheta
 VIGNETTE_CORNER_SIZE = 10  # lado (px) do quadrado de cada canto inspecionado
@@ -45,6 +48,21 @@ class VignetteResult:
     image: np.ndarray
     mask: np.ndarray  # True onde há vinheta
     detected: bool
+
+
+def normalize_input(image: np.ndarray, size: int = INPUT_SIZE) -> np.ndarray:
+    """P0: recorta o quadrado central e redimensiona para `size` × `size` (interpolação por área).
+
+    Sempre ligada e fora da ablação. Nas imagens da base (todas 300 × 300) é uma cópia; existe
+    para que imagens de outros dermatoscópios cheguem na escala dos kernels de P1–P5 e S.
+    """
+    h, w = image.shape[:2]
+    side = min(h, w)
+    top, left = (h - side) // 2, (w - side) // 2
+    square = image[top : top + side, left : left + side]
+    if side == size:
+        return square.copy()
+    return cv2.resize(square, (size, size), interpolation=cv2.INTER_AREA)
 
 
 def full_roi(image: np.ndarray) -> np.ndarray:

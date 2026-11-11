@@ -37,19 +37,20 @@ comparando PDI tradicional com CNN. Visão geral e comandos no [README](README.m
 - No Streamlit, `selectbox` com valor `None` aparece vazio; use um valor sentinela
   (ex.: `"off"`) e converta ao montar a configuração.
 
-## Estado (2026-11-10)
+## Estado (2026-11-10, desktop)
 
 Pronto:
-- Pipeline P1–P5 + S configurável por técnica (`pdi.pipeline`), com técnicas
-  alternativas da seção 6.1; cenários A, L, T, S em `training.scenarios`.
-- API: `/pipeline/options`, `/pipeline`, `/compare`; `/predict` ainda usa o
-  `DummyPredictor` (sem valor diagnóstico).
-- Web: Triagem (com o dummy) e Simulador (modo "uma imagem", sem probabilidade e sem
-  indicadores ABCD por enquanto).
+- Pipeline P0 (sempre ligada) + P1–P5 + S configurável por técnica (`pdi.pipeline`), com
+  técnicas alternativas da seção 6.1; cenários A, L, T, S em `training.scenarios`.
+- Características F (`pdi.features`, lista fechada da seção 3.1: 38 valores em 3 grupos);
+  NaN quando a segmentação vem vazia (≈1% numa amostra de 200 imagens de treino).
+- API: `/pipeline/options`, `/pipeline`, `/compare` (com as características F);
+  `/predict` ainda usa o `DummyPredictor` (sem valor diagnóstico).
+- Web: Triagem (com o dummy) e Simulador (modo "uma imagem", com aba Características,
+  sem probabilidade por enquanto).
 
 Próximo (marcos da seção 11 do plano):
-- **M1:** `pdi/features.py` (lista da seção 3.1), P0 (normalização da entrada), correção
-  do P2, página Anotação.
+- **M1 (restante):** correção do P2, página Anotação.
 - **M3:** engine de cenários + fila na API + páginas Experimentos e Resultados;
   cenários tradicionais.
 - **M4:** CNN (EfficientNet-B0, protocolo da seção 5.7) no desktop; Docker Compose com

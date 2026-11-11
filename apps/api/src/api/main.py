@@ -1,4 +1,5 @@
 import json
+import math
 from typing import Annotated, Any
 
 import numpy as np
@@ -9,6 +10,7 @@ from pydantic import BaseModel
 from api.imaging import png_b64
 from api.predictor import DummyPredictor, Predictor
 from pdi import SEGMENTATION_METHODS, STAGES, PipelineConfig, PipelineResult, load_rgb, run
+from pdi import features as pdi_features
 from pdi.visualize import overlay_contour
 from training.compare import MAX_COMBINATIONS, Combination, compare, figure
 from training.scenarios import SCENARIOS
@@ -54,6 +56,7 @@ class OptionsOut(BaseModel):
     default_config: dict[str, Any]
     presets: list[PresetOut]
     max_combinations: int
+    feature_groups: dict[str, list[str]]  # grupos da lista fechada de características (F)
 
 
 class StageResultOut(BaseModel):
@@ -71,12 +74,14 @@ class PipelineOut(BaseModel):
     vignette_detected: bool
     timings: dict[str, float]
     total_seconds: float
-    input: str
+    original_shape: list[int]  # imagem recebida, antes da normalização P0
+    input: str  # imagem após P0
     stages: list[StageResultOut]
     final: str  # imagem pré-processada final
     lesion_mask: str | None
     overlay: str | None  # imagem final com o contorno da lesão
     lesion_area_fraction: float | None
+    features: dict[str, float | None]  # etapa F; None quando não há lesão segmentada
 
 
 class CombinationOut(BaseModel):
@@ -123,6 +128,7 @@ def _pipeline_out(result: PipelineResult) -> PipelineOut:
         vignette_detected=result.vignette_detected,
         timings=result.timings,
         total_seconds=sum(result.timings.values()),
+        original_shape=list(result.original_shape),
         input=png_b64(result.input),
         stages=[
             StageResultOut(
@@ -140,6 +146,10 @@ def _pipeline_out(result: PipelineResult) -> PipelineOut:
         lesion_mask=png_b64(mask) if mask is not None else None,
         overlay=png_b64(overlay_contour(result.image, mask)) if mask is not None else None,
         lesion_area_fraction=float(mask.mean()) if mask is not None else None,
+        features={
+            k: None if math.isnan(v) else v
+            for k, v in pdi_features.extract(result.image, mask, result.roi).items()
+        },
     )
 
 
@@ -187,6 +197,7 @@ def pipeline_options() -> OptionsOut:
             for s in SCENARIOS.values()
         ],
         max_combinations=MAX_COMBINATIONS,
+        feature_groups={g: list(names) for g, names in pdi_features.FEATURE_GROUPS.items()},
     )
 
 

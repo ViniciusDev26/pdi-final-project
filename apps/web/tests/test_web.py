@@ -105,6 +105,7 @@ OPTIONS = {
         {"id": "L1", "group": "L", "description": "Sem P1", "config": {**FULL, "vignette": None}},
     ],
     "max_combinations": 4,
+    "feature_groups": {"forma": ["solidez"], "cor": ["n_cores"]},
 }
 
 
@@ -153,3 +154,18 @@ def test_simulador_shows_error_when_api_is_down(monkeypatch):
     at = AppTest.from_file(str(SIMULADOR)).run(timeout=10)
     assert not at.exception
     assert at.error[0].value == "Não foi possível conectar à API."
+
+
+def test_features_table_has_one_column_per_combination():
+    import math
+
+    from web.common import features_table
+
+    combos = [
+        {"label": "A0", "result": {"features": {"solidez": 0.9, "n_cores": 2.0}}},
+        {"label": "A5", "result": {"features": {"solidez": None, "n_cores": None}}},
+    ]
+    table = features_table(combos, OPTIONS["feature_groups"])
+    assert list(table.columns) == ["A0", "A5"]
+    assert table.loc[("forma", "solidez"), "A0"] == 0.9
+    assert math.isnan(table.loc[("cor", "n_cores"), "A5"])

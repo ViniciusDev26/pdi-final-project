@@ -8,7 +8,7 @@ import httpx
 import pandas as pd
 import streamlit as st
 
-from web.common import api_error_message, b64_image, get_client
+from web.common import api_error_message, b64_image, features_table, get_client
 
 # presets sugeridos para as colunas: sem × com pré-processamento, técnica X × Y
 DEFAULT_PRESETS = ("A0", "A5", "T4", "L1")
@@ -173,8 +173,14 @@ combos = result["combinations"]
 
 # ---------------------------------------------------------------- resultados
 
-tab_final, tab_steps, tab_dice, tab_fig = st.tabs(
-    ["Resultado final", "Etapa a etapa", "Concordância das máscaras", "Figura para slides"]
+tab_final, tab_steps, tab_dice, tab_feats, tab_fig = st.tabs(
+    [
+        "Resultado final",
+        "Etapa a etapa",
+        "Concordância das máscaras",
+        "Características",
+        "Figura para slides",
+    ]
 )
 
 with tab_final:
@@ -187,6 +193,9 @@ with tab_final:
             st.metric("Área da lesão", "—" if area is None else f"{area:.1%}")
             st.metric("Tempo de processamento", f"{r['total_seconds'] * 1000:.0f} ms")
             st.caption("Vinheta detectada" if r["vignette_detected"] else "Sem vinheta detectada")
+            h, w = r["original_shape"][:2]
+            if (h, w) != (300, 300):
+                st.caption(f"Entrada {w} × {h} normalizada para 300 × 300 (P0)")
 
 with tab_steps:
     # uma linha por combinação, uma coluna por etapa (mesmo formato da figura para slides)
@@ -226,6 +235,21 @@ with tab_dice:
         ),
         width="stretch",
     )
+
+with tab_feats:
+    st.write(
+        "Características extraídas dentro da máscara da lesão, sobre a imagem pré-processada "
+        "(lista fechada da seção 3.1 do plano): forma e borda (critérios A, B e D), cor (C) e "
+        "textura (GLCM e LBP). Comparar as colunas mostra o quanto cada combinação de técnicas "
+        "altera o que o classificador vê. Valores vazios: nenhuma lesão segmentada."
+    )
+    table = features_table(combos, options["feature_groups"])
+    group = st.segmented_control(
+        "Grupo", ["Todos", *options["feature_groups"]], default="Todos", key="sim_feat_group"
+    )
+    if group and group != "Todos":
+        table = table.xs(group, level="Grupo", drop_level=False)
+    st.dataframe(table.style.format("{:.3f}", na_rep="—"), width="stretch")
 
 with tab_fig:
     figure = b64_image(result["figure"])

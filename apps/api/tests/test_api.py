@@ -59,6 +59,7 @@ def test_options_lists_stages_techniques_and_presets():
     assert presets["A0"]["config"]["contrast"] is None
     assert presets["T4"]["config"]["contrast"] == "equalize"
     assert body["max_combinations"] == 4
+    assert set(body["feature_groups"]) == {"forma", "cor", "textura"}
 
 
 def test_pipeline_returns_every_stage_and_mask():
@@ -69,6 +70,19 @@ def test_pipeline_returns_every_stage_and_mask():
     assert body["stages"][3]["technique"] == "equalize"
     assert body["lesion_mask"] and body["overlay"]
     assert 0.1 < body["lesion_area_fraction"] < 0.3
+
+
+def test_pipeline_normalizes_input_and_returns_features():
+    body = client.post("/pipeline", files=_file()).json()
+    assert body["original_shape"] == [120, 120, 3]  # P0 leva a imagem para 300 × 300
+    feats = body["features"]
+    assert feats["n_cores"] >= 1 and 0 < feats["solidez"] <= 1
+    assert feats["assimetria_eixo_maior"] < 0.1  # lesão circular
+
+
+def test_pipeline_features_are_null_without_segmentation():
+    resp = client.post("/pipeline", files=_file(), data={"config": '{"segmentation": null}'})
+    assert all(v is None for v in resp.json()["features"].values())
 
 
 def test_pipeline_defaults_to_full_config():

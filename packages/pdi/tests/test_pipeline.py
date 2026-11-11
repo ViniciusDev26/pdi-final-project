@@ -67,7 +67,7 @@ def test_full_pipeline_preserves_shape_and_records_every_stage():
     result = run(img)
     assert result.image.shape == img.shape and result.image.dtype == np.uint8
     assert [s.id for s in result.stages] == list(STAGE_IDS)
-    assert set(result.timings) == {*STAGE_IDS, "S"}
+    assert set(result.timings) == {"P0", *STAGE_IDS, "S"}
     assert result.lesion_mask is not None and result.lesion_mask.shape == img.shape[:2]
 
 
@@ -285,3 +285,29 @@ def test_gaussian_smooths_noise():
     noisy = noisy.astype(np.uint8)
     out = preprocess.gaussian(noisy, preprocess.full_roi(noisy))
     assert out.std(axis=(0, 1)).mean() < noisy.std(axis=(0, 1)).mean() / 2
+
+
+# ---------------------------------------------------------------- P0
+
+
+def test_p0_is_a_copy_for_dataset_sized_images():
+    img, _ = _lesion_image()
+    out = preprocess.normalize_input(img)
+    np.testing.assert_array_equal(out, img)
+    assert out is not img
+
+
+def test_p0_crops_central_square_and_resizes():
+    img = np.zeros((600, 900, 3), dtype=np.uint8)
+    img[:, 150:750] = (200, 160, 140)  # quadrado central 600 × 600; laterais pretas
+    out = preprocess.normalize_input(img)
+    assert out.shape == (300, 300, 3)
+    assert (out == (200, 160, 140)).all()
+
+
+def test_run_normalizes_input_of_any_size():
+    img = cv2.resize(_lesion_image()[0], (800, 600))
+    result = run(img)
+    assert result.original_shape == (600, 800, 3)
+    assert result.input.shape == result.image.shape == (SIZE, SIZE, 3)
+    assert result.lesion_mask.shape == (SIZE, SIZE)
