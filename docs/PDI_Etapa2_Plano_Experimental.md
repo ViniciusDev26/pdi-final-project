@@ -15,8 +15,8 @@ Responder às três questões científicas da Etapa 1 com experimentos controlad
 | # | Questão | Experimento que responde |
 |---|---|---|
 | Q1 | A abordagem tradicional (ABCD + cor + textura) chega perto da CNN? | Cenários **C** (seção 5.3) |
-| Q2 | Quanto cada etapa de pré-processamento contribui para segmentação e classificação? | Cenários **A** e **L** (seções 5.1 e 5.2) + simulador (seção 6) |
-| Q3 | Os modelos decidem pela lesão ou por artefatos (pelos, réguas, vinheta)? | Cenários **V** (seção 5.4) + Grad-CAM + simulador |
+| Q2 | Quanto cada etapa de pré-processamento contribui para segmentação e classificação? | Cenários **A**, **L** e **T** (seções 5 e 6.3) + simulador (seção 6) |
+| Q3 | Os modelos decidem pela lesão ou por artefatos (pelos, réguas, vinheta)? | Cenários **V** (seção 5.4) + Grad-CAM |
 
 Regra central: **cada etapa do pipeline tem um cenário de teste próprio**, com a
 métrica local da etapa *e* o impacto no resultado final (segmentação e classificação),
@@ -64,23 +64,24 @@ imagem → P1 → P2 → P3 → P4 → P5 ──────→ M (CNN)
 - Treino e API usam o mesmo código de `packages/pdi`: a imagem enviada ao protótipo passa
   exatamente pelas mesmas etapas usadas no treino.
 
-Cada etapa é uma função pura em `packages/pdi` que pode ser ligada/desligada por
-configuração. A ordem é fixa:
+Cada etapa é uma função pura em `packages/pdi`, configurável: pode ser desligada ou
+trocada por uma técnica alternativa (seção 6.1). A ordem é fixa. A tabela mostra a
+técnica **padrão** de cada etapa:
 
-| ID | Etapa | Técnica | Métrica local da etapa (isolada) |
+| ID | Etapa | Técnica padrão | Métrica local da etapa (isolada) |
 |---|---|---|---|
 | P1 | Recorte da vinheta | limiarização da borda escura + máscara circular | taxa de detecção da vinheta; área recortada |
-| P2 | Remoção de pelos | DullRazor (black-hat + limiar + inpainting) | PSNR/SSIM na restauração de pelos sintéticos (simulador) |
+| P2 | Remoção de pelos | DullRazor (black-hat + limiar + inpainting) | PSNR/SSIM na restauração de pelos sintéticos (seção 6.4) |
 | P3 | Normalização de cor | Shades of Gray (p = 6) | dispersão da cor média da pele entre imagens; ΔE sob dominante de cor sintética |
 | P4 | Realce de contraste | CLAHE no canal L (CIELab) | contraste RMS; gradiente médio na borda da lesão |
 | P5 | Filtragem | mediana / gaussiana | estabilidade da máscara sob ruído sintético |
 | S  | Segmentação | limiarização (Otsu global ou adaptativa) + morfologia (abertura/fechamento) + maior componente conexo | **Dice / IoU** no subconjunto anotado |
 | F  | Características | forma (A, D), borda (B: gradiente Sobel e bordas Canny ao longo do contorno), cor (C: estatísticas em HSV e CIELab), textura (GLCM, LBP) | importância por permutação; AUC por grupo |
+| M  | Classificação | SVM, Random Forest, CNN (transfer learning) | métricas da seção 2 |
 
 Cada etapa gera uma figura "antes → depois" com as mesmas 6 imagens de exemplo (lista
 fixa em `experiments/exemplos_ids.csv`), usada na apresentação para mostrar a técnica
 funcionando.
-| M  | Classificação | SVM, Random Forest, CNN (transfer learning) | métricas da seção 2 |
 
 ## 4. Como o impacto de uma etapa é medido
 
@@ -150,6 +151,7 @@ etapa atrapalha — nesse caso, justificar e registrar no histórico).
 | V2 | C2 e C6/C7 avaliados separadamente nas imagens **com** e **sem** vinheta | Diferença de AUC = quanto o modelo depende do artefato |
 | V3 | CNN com a pele fora da máscara de segmentação zerada | Se o desempenho se mantém, o modelo usa a lesão |
 | V4 | Grad-CAM nas 60 imagens anotadas: fração da ativação dentro da máscara manual | Quantifica "onde o modelo olha" |
+| V5 | Vinheta artificial inserida em 50 benignas do teste sem vinheta (lista fixa em `experiments/v5_ids.csv`); variação da probabilidade de melanoma, com e sem P1 | Se a probabilidade sobe só por causa da borda escura, o modelo aprendeu o atalho; com P1 ligada, a variação deveria ser ≈ 0 |
 
 ### 5.5 Cenários de segmentação (S)
 
@@ -171,63 +173,166 @@ Além das tabelas, cada rodada de `just relatorio` gera:
 - **análise qualitativa de erros:** os 10 falsos negativos e os 10 falsos positivos de
   maior confiança do melhor modelo, com imagem, máscara, Grad-CAM e uma anotação da equipe
   sobre a causa provável (pelo, vinheta, baixo contraste, lesão atípica…);
-- gráfico de barras do impacto por etapa (cenários A e L) e as curvas do simulador;
+- gráfico de barras do impacto por etapa (cenários A e L) e das técnicas alternativas
+  (cenários T);
+- grades do simulador para as 6 imagens de exemplo (seção 6.2);
 - tempo médio de processamento por imagem, por etapa.
 
-## 6. Simulador de artefatos (testes de estresse)
+## 6. Simulador: comparador de técnicas e combinações
 
-Como a base não diz quais imagens têm pelos, dominante de cor etc., o simulador
-**injeta artefatos controlados** em imagens limpas e mede, para cada intensidade, o
-resultado com e sem a etapa que deveria corrigir o artefato. Isso isola o efeito de cada
-etapa de uma forma que a ablação na base real não consegue.
+O simulador compara o resultado de **diferentes combinações de técnicas** sobre a mesma
+imagem ou sobre a base inteira: com e sem pré-processamento, técnica X ou técnica Y em
+cada etapa, e abordagem tradicional × CNN. É ao mesmo tempo a ferramenta de exploração
+da equipe, a fonte das evidências da Q1 e da Q2 e a peça central da demonstração.
 
-| Artefato sintético | Parâmetro de intensidade | Etapa avaliada | Saídas medidas |
-|---|---|---|---|
-| Pelos (curvas escuras aleatórias) | nº de fios: 0, 10, 25, 50, 100 | P2 | PSNR/SSIM vs original, Dice, Δ probabilidade |
-| Dominante de cor (ganho por canal RGB) | desvio: 0, 10%, 20%, 30%, 40% | P3 | ΔE da pele, variação das características de cor, Δ probabilidade |
-| Baixo contraste (compressão do histograma) | fator: 1,0; 0,8; 0,6; 0,4 | P4 | gradiente na borda, Dice |
-| Ruído gaussiano | σ: 0, 5, 10, 20 | P5 | Dice, Δ probabilidade |
-| Vinheta artificial (borda escura circular) | raio: sem, 0,95, 0,85, 0,75 | P1 | Δ probabilidade em lesões benignas (deveria ser ≈ 0) |
+### 6.1 O que pode variar
 
-- Imagens de origem: 100 imagens do teste (50/50), sem vinheta, com pouco pelo (lista
-  fixa em `experiments/simulador_ids.csv`); semente fixa por imagem e intensidade.
-- Resultado: uma curva "métrica × intensidade" por artefato, com duas linhas
-  (etapa ligada / desligada). Essas curvas são a principal evidência visual da Q2.
-- O teste de vinheta artificial é o mais importante para a Q3: se colocar uma borda
-  escura numa lesão benigna aumentar a probabilidade de melanoma, o modelo aprendeu o
-  atalho.
+Cada etapa aceita "nenhuma" ou uma das técnicas listadas (padrão em **negrito**). Todas
+as alternativas constam da tabela de técnicas da Etapa 1.
 
-### Modo interativo (demonstração)
+| Etapa | Opções |
+|---|---|
+| P1 Vinheta | nenhuma · **preenchimento com a cor da pele** |
+| P2 Pelos | nenhuma · **DullRazor (black-hat + inpainting)** · fechamento morfológico |
+| P3 Cor | nenhuma · **Shades of Gray (p = 6)** · Gray World (p = 1) · White Patch (p = ∞) |
+| P4 Contraste | nenhum · **CLAHE (canal L)** · equalização global de histograma |
+| P5 Filtro | nenhum · **mediana** · gaussiano |
+| S Limiarização | **Otsu** · adaptativa |
+| S Pós-processamento | sem · **morfologia + componente central** |
+| Classificador | SVM · **Random Forest** · CNN |
+| Entrada da CNN | imagem bruta · imagem pré-processada · só a lesão (fundo zerado pela máscara) |
 
-A mesma engine alimenta uma página do protótipo (Streamlit), usada na apresentação:
+Só na parte tradicional são 2 × 3 × 4 × 3 × 3 × 2 × 2 = **864 pipelines**, vezes 2
+classificadores. Por isso o simulador tem dois modos.
 
-- upload de imagem ou escolha de uma imagem de exemplo;
-- interruptores para ligar/desligar cada etapa P1–P5;
-- controles deslizantes para injetar cada artefato do simulador;
-- exibição lado a lado de cada etapa intermediária, da máscara, das características ABCD
-  e da probabilidade, atualizadas a cada mudança.
+### 6.2 Modo "uma imagem" (exploração e demonstração)
 
-## 7. Organização no código
+- Qualquer combinação pode ser montada e executada sobre uma imagem, mostrando cada etapa
+  intermediária, a máscara e os indicadores ABCD.
+- **Comparação lado a lado** de 2 a 4 combinações sobre a mesma imagem, com as
+  diferenças calculadas: Dice entre as máscaras, variação de cada indicador ABCD e
+  variação da probabilidade. Exemplos: sem × com pré-processamento; CLAHE × equalização
+  global; Otsu × adaptativa; Random Forest × CNN.
+- **A probabilidade só aparece para combinações com modelo treinado** (os cenários da
+  seção 5 e 6.3, cada um com seu modelo salvo). Um classificador treinado com as
+  características de um pipeline não vale para as de outro; aplicar mesmo assim mostraria
+  números enganosos. Combinações livres mostram imagens, máscara e indicadores, sem
+  probabilidade.
+- A CNN é exibida pelos modelos C6 (imagem bruta), C7 (pré-processada) e V3 (só a
+  lesão), cada um sobre a entrada com que foi treinado.
+- Disponível no sistema web (seção 7.1), com botão para baixar a grade em figura para
+  os slides.
+
+### 6.3 Modo "base inteira" (evidência quantitativa)
+
+- Executa o conjunto congelado de cenários (seção 5 e cenários T abaixo), cada um com o
+  próprio classificador treinado, e gera a tabela comparativa com IC 95%.
+- **Com × sem pré-processamento:** A0 × A5 na abordagem tradicional e C6 × C7 na CNN.
+- **Técnica X × técnica Y:** cenários T, que partem de A5 e trocam a técnica de uma única
+  etapa, para que a diferença seja atribuível só a essa troca:
+
+| ID | Troca em relação a A5 |
+|---|---|
+| T1 | P2 = fechamento morfológico |
+| T2 | P3 = Gray World |
+| T3 | P3 = White Patch |
+| T4 | P4 = equalização global de histograma |
+| T5 | P5 = gaussiano |
+
+- **Tradicional × CNN:** cenários C (seção 5.3).
+- A grade completa de 864 combinações **não** é executada na base: além do custo, testar
+  centenas de combinações e escolher a melhor no teste superestimaria o resultado. Uma
+  combinação nova só entra como cenário novo, com ID próprio, registrada no histórico.
+
+### 6.4 Artefatos sintéticos (apoio)
+
+Imagens com artefatos inseridos de forma controlada servem a duas medições, não ao
+simulador:
+
+- métricas locais das etapas (seção 3): pelos sintéticos para o PSNR/SSIM de P2 e
+  dominante de cor sintética para o ΔE de P3;
+- o cenário V5 (vinheta artificial em lesões benignas).
+
+## 7. Sistema web e organização do código
+
+### 7.1 Tudo pelo sistema web
+
+**Regra: toda funcionalidade do projeto é acessível pelo sistema web.** Nada depende de
+rodar comando no terminal; comandos `just` podem existir como atalho para a equipe, mas
+chamam o mesmo código que a interface web.
+
+Arquitetura (a que já existe no repositório): o front (Streamlit) só conversa com a API
+(FastAPI) por HTTP; a API usa `packages/pdi` e `apps/training`.
+
+```
+navegador → web (Streamlit) ──HTTP──► API (FastAPI) ──► pdi (pipeline)
+                                          │           └► training (cenários, modelos)
+                                          └► results/ · models/ · data/
+```
+
+Páginas do sistema web:
+
+| Página | Para quem | O que faz |
+|---|---|---|
+| **Triagem** | público-alvo (profissional da APS) | envia uma imagem e recebe: lesão segmentada, indicadores ABCD, probabilidade, Grad-CAM e a recomendação (encaminhar / acompanhar), com o aviso de que não substitui diagnóstico |
+| **Simulador — uma imagem** | equipe e banca | monta combinações de técnicas (seção 6.1), mostra cada etapa e compara 2 a 4 combinações lado a lado (seção 6.2); baixa a grade em PNG |
+| **Experimentos** | equipe | lista os cenários congelados (A, L, T, C, V, S) com status; botão **Executar** para um cenário ou para todos; progresso e log em tempo real; reexecução |
+| **Resultados — base inteira** | equipe e banca | tabela comparativa com IC 95%, filtro com/sem vinheta, impacto por etapa (A/L/T), ROC e matrizes de confusão (C), Dice/IoU (S), V1–V5, Grad-CAM e análise de erros (seção 5.6); exporta figuras e tabelas |
+| **Base de dados** | equipe e banca | distribuição das classes e divisões, duplicatas removidas, prevalência da vinheta por classe, exemplos por classe |
+
+Execução de experimentos pela web:
+
+- A API recebe o pedido, enfileira o cenário e o executa em um processo separado (um por
+  vez, para não disputar a GPU); o estado fica em `results/<ID>/status.json`
+  (na fila / executando / concluído / erro, com progresso e log), e a página consulta a
+  API periodicamente.
+- Cenários tradicionais levam minutos; os de CNN podem levar horas. A página mostra o
+  tempo estimado antes de executar.
+Onde o sistema roda:
+
+- **Servidor de experimentos: desktop da equipe — Linux Omarchy (Arch), Intel i9, 32 GB
+  de RAM, GPU NVIDIA RTX 4060 Ti (CUDA).** API,
+  web e fila de experimentos rodam nele via Docker Compose, com a GPU repassada ao
+  contêiner da API; a equipe acessa o sistema pelo navegador, de qualquer máquina da rede.
+  O treino da CNN e todos os cenários executam ali, para que todos os resultados venham da
+  mesma máquina e do mesmo ambiente.
+- **Máquinas de desenvolvimento (Mac):** desenvolvem e testam o código. O
+  `training.device.get_device()` escolhe CUDA, MPS ou CPU automaticamente, então o mesmo
+  código roda nas duas; mas **números oficiais só vêm do desktop**.
+- **Demonstração:** o sistema roda no desktop e é acessado de um notebook ou, se não
+  houver rede confiável no local da apresentação, uma cópia de `results/` e `models/` é
+  levada para o notebook, que roda só a parte de leitura (Triagem, Simulador e
+  Resultados). A página Resultados permite baixar e carregar esse pacote.
+- **Reprodutibilidade na GPU:** semente fixa e `torch.backends.cudnn.deterministic = True`
+  nos cenários de CNN; cada `metrics.json` registra a GPU, o driver e as versões de CUDA e
+  PyTorch usados.
+
+### 7.2 Organização do código
 
 ```
 packages/pdi/src/pdi/
   preprocess.py     P1–P5, cada etapa uma função pura
   segment.py        S
   features.py       F
-  pipeline.py       PipelineConfig (quais etapas ligadas) + run(image, config) -> resultado com intermediários
-  artifacts.py      geradores de artefatos sintéticos do simulador
+  pipeline.py       PipelineConfig (técnica de cada etapa ou "nenhuma") + run(image, config) -> resultado com intermediários
+  artifacts.py      artefatos sintéticos (seção 6.4)
   metrics.py        Dice, IoU, PSNR, SSIM, ΔE, contraste
 apps/training/src/training/
-  scenarios.py      definição congelada dos cenários A, L, C, V (IDs da seção 5)
-  run_scenario.py   executa um cenário -> results/<ID>/metrics.json + figuras
-  simulate.py       executa o simulador -> results/sim/<artefato>.csv + curvas
-  report.py         consolida results/ em tabelas e gráficos para a apresentação
-experiments/        listas fixas de IDs (anotação, sem vinheta, simulador)
+  scenarios.py      definição congelada dos cenários A, L, T, C, V, S (IDs das seções 5 e 6.3)
+  run_scenario.py   executa um cenário -> results/<ID>/metrics.json + modelo + figuras
+  compare.py        simulador, modo "uma imagem": executa e compara combinações
+  report.py         simulador, modo "base inteira": consolida results/ em tabelas e gráficos
+apps/api/src/api/
+  main.py           rotas: /predict, /pipeline, /compare, /scenarios, /jobs, /results, /dataset
+  jobs.py           fila de execução de cenários (um processo por vez) + status.json
+apps/web/src/web/
+  pages/            Triagem, Simulador, Experimentos, Resultados, Base de dados
+experiments/        listas fixas de IDs (anotação, sem vinheta, exemplos, V5)
 results/            saídas dos experimentos (fora do git, reproduzíveis)
 ```
 
-Comandos previstos: `just experimento <ID>`, `just experimentos` (todos),
-`just simulador`, `just relatorio`.
+Atalhos de terminal para a equipe (opcionais; chamam as mesmas funções que a API):
+`just experimento <ID>`, `just experimentos`.
 
 Cada `metrics.json` registra também o commit do git e a configuração usada, para que
 qualquer número da apresentação seja rastreável até o código que o gerou.
@@ -240,11 +345,11 @@ máximo; a soma fica abaixo dos 15 minutos para sobrar margem.
 | # | Tópico obrigatório | Conteúdo | Fonte | Tempo |
 |---|---|---|---|---|
 | 1 | Problema social e público-alvo | APS de Fortaleza, dados do INCA/SBD, escassez de dermatologistas | Etapa 1 (resumida em 1 slide) | 1 min |
-| 2 | Objetivo geral e específicos | objetivo geral + tabela dos 6 objetivos específicos com **status** (cumprido / parcial / não cumprido) e o slide/evidência que comprova cada um | Etapa 1 + seção 9 | 1 min |
+| 2 | Objetivo geral e específicos | objetivo geral + tabela dos 6 objetivos específicos com **status** (cumprido / parcial / não cumprido) e o slide/evidência que comprova cada um | Etapa 1 + seção 10 | 1 min |
 | 3 | Arquitetura e ferramentas | diagrama: imagem → web (Streamlit) → API (FastAPI) → `pdi` (pipeline) → modelo; treino offline gerando `models/`; ferramentas: Python, OpenCV, scikit-image, scikit-learn, PyTorch, FastAPI, Streamlit, Docker, uv | README + diagrama | 1 min |
 | 4 | Técnicas de PDI implementadas | uma figura "antes → depois" por etapa (P1–P5, S, F) com uma frase sobre o que ela faz | seção 3 | 2,5 min |
-| 5 | Demonstração do protótipo | página interativa: imagem real → etapas → máscara → indicadores ABCD → probabilidade; ligar/desligar etapa e injetar vinheta artificial ao vivo | seção 6 | 3 min |
-| 6 | Resultados visuais e métricas | impacto por etapa (A/L) e curvas do simulador (Q2); tabela e ROC tradicional × CNN (Q1); viés da vinheta e Grad-CAM (Q3); Dice/IoU; erros típicos | seções 5 e 5.6 | 3,5 min |
+| 5 | Demonstração do protótipo | no sistema web: página Triagem (fluxo do profissional da APS) e Simulador ao vivo, com comparação lado a lado (sem × com pré-processamento, técnica X × Y, tradicional × CNN) | seções 6.2 e 7.1 | 3 min |
+| 6 | Resultados visuais e métricas | apresentados pela página Resultados: impacto por etapa (A/L) e técnicas alternativas (T) (Q2); tabela e ROC tradicional × CNN (Q1); viés da vinheta, V5 e Grad-CAM (Q3); Dice/IoU; erros típicos | seções 5, 5.6, 6.3 e 7.1 | 3,5 min |
 | 7 | Limitações | ver seção 8.1 | — | 1 min |
 | 8 | Contribuição para o público-alvo | ver seção 8.2 | — | 0,5 min |
 | 9 | Conclusões e melhorias | respostas diretas a Q1, Q2 e Q3 + ver seção 8.3 | — | 1 min |
@@ -286,15 +391,17 @@ Grad-CAM), e não só um rótulo.
 
 | Frente | Responsável | Entregáveis |
 |---|---|---|
-| P1–P5, S, F, simulador de artefatos, anotação das 60 máscaras | Renan (anotação dividida entre os três) | `pdi/*`, `experiments/anotacao_ids.csv`, máscaras |
-| Cenários A, L, C, V; CNN; Grad-CAM; relatório de métricas | Guilherme | `training/*`, `results/`, tabelas e gráficos |
-| Engine de cenários, API com intermediários, página interativa, README de execução | Carlos | `pipeline.py`, `api`, `web`, `justfile` |
+| P1–P5 e técnicas alternativas, S, F, artefatos sintéticos, anotação das 60 máscaras | Renan (anotação dividida entre os três) | `pdi/*`, `experiments/anotacao_ids.csv`, máscaras |
+| Cenários A, L, T, C, V, S; CNN; Grad-CAM; simulador modo "base inteira" | Guilherme | `training/*`, `results/`, tabelas e gráficos |
+| Engine de cenários; sistema web completo (5 páginas da seção 7.1); API com intermediários, fila de experimentos e resultados; README de execução | Carlos | `pipeline.py`, `compare.py`, `api`, `web`, `justfile` |
 | Apresentação (15 min) | todos | slides seguindo os 9 tópicos do enunciado |
 
 ## 10. Critérios de pronto
 
-- [ ] Todos os cenários A, L, C, V, S executados com `metrics.json` em `results/`
-- [ ] Curvas do simulador para os 5 artefatos
+- [ ] Todos os cenários A, L, T, C, V, S executados com `metrics.json` e modelo em `results/`
+- [ ] Simulador funcionando nos dois modos (uma imagem e base inteira)
+- [ ] Todas as funcionalidades acessíveis pelo sistema web, inclusive executar cenários e
+      ver resultados (seção 7.1); nenhuma depende só do terminal
 - [ ] Tabela de impacto por etapa (local / segmentação / final) com IC 95%
 - [ ] Saídas visuais da seção 5.6 geradas, incluindo a análise de erros anotada
 - [ ] Protótipo rodando com a página interativa + vídeo de plano B gravado
@@ -308,3 +415,6 @@ Grad-CAM), e não só um rótulo.
 |---|---|---|
 | 2026-11-10 | Versão inicial congelada | — |
 | 2026-11-10 | Incluídos Sobel/Canny (F) e limiarização adaptativa (S, cenários S1–S4); saídas visuais obrigatórias (5.6); mapa da apresentação com limitações, contribuição e melhorias (seção 8) | Cobrir técnicas prometidas na Etapa 1 e os 9 tópicos obrigatórios da apresentação da Etapa 2 |
+| 2026-11-10 | Simulador redefinido como comparador de técnicas e combinações (seção 6), com técnicas alternativas por etapa (6.1) e cenários T1–T5 (6.3); artefatos sintéticos rebaixados a apoio (6.4); vinheta artificial virou o cenário V5 | Alinhar com o pedido da equipe: comparar a mesma imagem em várias técnicas, com/sem pré-processamento e tradicional × CNN |
+| 2026-11-10 | Sistema web como interface única (seção 7.1): páginas Triagem, Simulador, Experimentos, Resultados e Base de dados; execução de cenários pela web via fila na API | Requisito da equipe: nenhuma funcionalidade pode depender só do terminal |
+| 2026-11-10 | Experimentos e treino da CNN no desktop com RTX 4060 Ti (CUDA), sistema completo rodando nele via Docker com GPU; Mac apenas para desenvolvimento | GPU NVIDIA disponível na equipe; a GPU da Apple não é acessível dentro do Docker |
