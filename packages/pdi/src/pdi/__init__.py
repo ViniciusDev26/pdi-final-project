@@ -5,5 +5,6 @@ aplique exatamente as mesmas transformações na inferência.
 """
 
 from pdi.io import load_rgb
+from pdi.pipeline import STAGE_IDS, PipelineConfig, PipelineResult, run
 
-__all__ = ["load_rgb"]
+__all__ = ["STAGE_IDS", "PipelineConfig", "PipelineResult", "load_rgb", "run"]
