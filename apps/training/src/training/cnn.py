@@ -42,7 +42,8 @@ from training.scenarios import SCENARIOS, Scenario
 
 INPUT_SIZE = 224
 BATCH_SIZE = 32
-MAX_EPOCHS = 30
+# 30 é o protocolo; PDI_CNN_MAX_EPOCHS só serve para testes rápidos (fica no metrics.json)
+MAX_EPOCHS = int(os.environ.get("PDI_CNN_MAX_EPOCHS", 30))
 PATIENCE = 5
 LR = 3e-4
 WEIGHT_DECAY = 1e-4

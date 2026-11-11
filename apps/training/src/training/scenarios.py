@@ -143,7 +143,7 @@ _MODEL_SCENARIOS: tuple[Scenario, ...] = (
         "cnn",
         "cnn",
         cnn_input="raw",
-        estimate="≈ 20 min (GPU)",
+        estimate="≈ 12 min (GPU)",
     ),
     Scenario(
         "C7",
@@ -153,7 +153,7 @@ _MODEL_SCENARIOS: tuple[Scenario, ...] = (
         "cnn",
         "cnn",
         cnn_input="preprocessed",
-        estimate="≈ 20 min (GPU)",
+        estimate="≈ 12 min (GPU)",
     ),
 )
 
@@ -186,7 +186,7 @@ _BIAS_SCENARIOS: tuple[Scenario, ...] = (
         "cnn",
         "cnn",
         cnn_input="lesion",
-        estimate="≈ 20 min (GPU)",
+        estimate="≈ 12 min (GPU)",
     ),
     Scenario(
         "V4",
