@@ -3,11 +3,19 @@
 Um cenário por vez, cada um num processo separado (`python -m training.run_scenario <ID>`),
 para não disputar a GPU nem travar a API. O estado de cada cenário fica em
 `results/<ID>/status.json` e a saída do processo em `results/<ID>/log.txt`.
+
+A fila sobrevive a reinícios da API (treinos de CNN levam horas): ela é gravada em
+`results/_fila.json`, o processo do cenário roda em sessão própria (não morre com a API) e
+registra o PID no status; ao subir, a API readota o processo ainda vivo, espera ele
+terminar e continua a fila.
 """
 
+import json
+import os
 import subprocess
 import sys
 import threading
+import time
 from collections import deque
 from collections.abc import Callable
 
@@ -16,10 +24,28 @@ from training import status
 from training.scenarios import SCENARIOS
 
 CommandFactory = Callable[[str], list[str]]
+POLL_SECONDS = 2.0
 
 
 def default_command(sid: str) -> list[str]:
     return [sys.executable, "-m", "training.run_scenario", sid]
+
+
+def pid_alive(pid: int | None) -> bool:
+    if not pid:
+        return False
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    # processo zumbi (já terminou, aguardando o pai) não conta como vivo
+    try:
+        with open(f"/proc/{pid}/stat") as f:
+            return f.read().split()[2] != "Z"
+    except OSError:
+        return True
 
 
 class JobQueue:
@@ -28,9 +54,23 @@ class JobQueue:
         self._queue: deque[str] = deque()
         self._running: str | None = None
         self._process: subprocess.Popen | None = None
+        self._adopted_pid: int | None = None
         self._lock = threading.Lock()
         self._wake = threading.Event()
         self._thread: threading.Thread | None = None
+
+    # ------------------------------------------------------------ persistência
+
+    @staticmethod
+    def _file():
+        return cfg.RESULTS_DIR / "_fila.json"
+
+    def _save(self) -> None:
+        path = self._file()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        tmp = path.with_suffix(".tmp")
+        tmp.write_text(json.dumps({"fila": list(self._queue), "executando": self._running}))
+        tmp.replace(path)
 
     # ------------------------------------------------------------ ciclo de vida
 
@@ -41,12 +81,31 @@ class JobQueue:
             self._thread.start()
 
     def recover(self) -> None:
-        """Cenários que ficaram na fila ou executando quando a API parou: interrompidos."""
-        for sid in SCENARIOS:
-            st = status.read(sid)
-            if st and st.get("state") in ("na_fila", "executando") and sid != self._running:
-                if sid not in self._queue:
+        """Retoma a fila gravada e readota um cenário cujo processo ainda está vivo."""
+        saved = {"fila": []}
+        try:
+            saved = json.loads(self._file().read_text())
+        except (FileNotFoundError, json.JSONDecodeError):
+            pass
+        with self._lock:
+            for sid in SCENARIOS:
+                st = status.read(sid) or {}
+                if st.get("state") != "executando" or sid == self._running:
+                    continue
+                if self._running is None and pid_alive(st.get("pid")):
+                    self._running, self._adopted_pid = sid, st["pid"]
+                else:
                     status.write(sid, state="interrompido", message="a API foi reiniciada")
+            for sid in saved.get("fila", []):
+                if sid in SCENARIOS and sid not in self._queue and sid != self._running:
+                    self._queue.append(sid)
+                    status.write(sid, state="na_fila", progress=0.0, message="na fila")
+            for sid in SCENARIOS:  # na fila sem estar na fila gravada: perdido
+                st = status.read(sid) or {}
+                if st.get("state") == "na_fila" and sid not in self._queue:
+                    status.write(sid, state="interrompido", message="a API foi reiniciada")
+            self._save()
+        self._wake.set()
 
     # ------------------------------------------------------------ operações
 
@@ -62,6 +121,7 @@ class JobQueue:
                 self._queue.append(sid)
                 status.write(sid, state="na_fila", progress=0.0, message="na fila", erro=None)
                 added.append(sid)
+            self._save()
         self._wake.set()
         return added
 
@@ -69,10 +129,14 @@ class JobQueue:
         with self._lock:
             if sid in self._queue:
                 self._queue.remove(sid)
+                self._save()
                 status.write(sid, state="interrompido", message="removido da fila")
                 return True
-            if sid == self._running and self._process is not None:
-                self._process.terminate()
+            if sid == self._running:
+                if self._process is not None:
+                    self._process.terminate()
+                elif self._adopted_pid:
+                    os.kill(self._adopted_pid, 15)
                 return True
         return False
 
@@ -84,9 +148,12 @@ class JobQueue:
 
     def _next(self) -> str | None:
         with self._lock:
+            if self._running is not None:  # cenário readotado
+                return self._running
             if not self._queue:
                 return None
             self._running = self._queue.popleft()
+            self._save()
             return self._running
 
     def _loop(self) -> None:
@@ -96,33 +163,49 @@ class JobQueue:
                 self._wake.wait()
                 self._wake.clear()
                 continue
-            self._execute(sid)
+            if self._adopted_pid:
+                self._wait_adopted(sid)
+            else:
+                self._execute(sid)
+
+    def _finish(self) -> None:
+        with self._lock:
+            self._process, self._running, self._adopted_pid = None, None, None
+            self._save()
+
+    def _wait_adopted(self, sid: str) -> None:
+        while pid_alive(self._adopted_pid):
+            time.sleep(POLL_SECONDS)
+        final = status.read(sid) or {}
+        if final.get("state") == "executando":
+            status.write(sid, state="interrompido", message="o processo terminou sem concluir")
+        self._finish()
 
     def _execute(self, sid: str) -> None:
         out = status.scenario_dir(sid)
         out.mkdir(parents=True, exist_ok=True)
-        status.write(sid, state="executando", progress=0.0, message="iniciando processo")
         with (out / "log.txt").open("w") as log:
             proc = subprocess.Popen(
                 self._command(sid),
                 cwd=cfg.REPO_ROOT,
                 stdout=log,
                 stderr=subprocess.STDOUT,
+                start_new_session=True,  # sobrevive a um reinício da API
+            )
+            status.write(
+                sid, state="executando", progress=0.0, message="iniciando processo", pid=proc.pid
             )
             with self._lock:
                 self._process = proc
             code = proc.wait()
-        with self._lock:
-            self._process, self._running = None, None
         final = status.read(sid) or {}
-        if code != 0 and final.get("state") not in ("erro",):
+        if code != 0 and final.get("state") != "erro":
             message = "cancelado" if code < 0 else f"processo terminou com código {code}"
             status.write(sid, state="interrompido" if code < 0 else "erro", message=message)
+        self._finish()
 
     def wait_idle(self, timeout: float = 30.0) -> bool:
         """Para testes: espera a fila esvaziar."""
-        import time
-
         end = time.monotonic() + timeout
         while time.monotonic() < end:
             snap = self.snapshot()

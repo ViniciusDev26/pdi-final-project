@@ -62,3 +62,23 @@ def test_report_and_figures_work_without_results(client):
     for name in client.get("/results/figures").json():
         resp = client.get(f"/results/figures/{name}.png")
         assert resp.status_code == 200 and resp.content[:4] == b"\x89PNG"
+
+
+def test_queue_survives_restart_and_adopts_live_process(client, tmp_path):
+    import json
+    import subprocess
+
+    sleeper = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(1.5)"])
+    status.write("C1", state="executando", progress=0.2, pid=sleeper.pid)
+    (tmp_path / "_fila.json").write_text(json.dumps({"fila": ["A2"], "executando": "C1"}))
+    q = JobQueue(command=lambda sid: [sys.executable, "-c", FAKE, sid])
+    q.recover()
+    assert q.snapshot() == {"executando": "C1", "fila": ["A2"]}
+    assert status.read("A2")["state"] == "na_fila"
+    q.start()
+    sleeper.wait()
+    assert q.wait_idle(timeout=15)
+    # o processo readotado terminou sem concluir; o próximo da fila rodou
+    assert status.read("C1")["state"] == "interrompido"
+    assert status.read("A2")["state"] == "concluido"
+    assert json.loads((tmp_path / "_fila.json").read_text())["fila"] == []
