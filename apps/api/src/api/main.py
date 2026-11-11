@@ -35,6 +35,7 @@ class TechniqueOut(BaseModel):
 
 class StageOptionsOut(BaseModel):
     id: str
+    field: str  # chave correspondente na configuração
     name: str
     default: str
     techniques: list[TechniqueOut]
@@ -170,6 +171,7 @@ def pipeline_options() -> OptionsOut:
         stages=[
             StageOptionsOut(
                 id=s.id,
+                field=s.field,
                 name=s.name,
                 default=s.default,
                 techniques=[TechniqueOut(key=t.key, label=t.label) for t in s.techniques],

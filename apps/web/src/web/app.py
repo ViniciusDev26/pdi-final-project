@@ -1,63 +1,34 @@
-"""Interface do protótipo. Rodar com: just web"""
+"""Sistema web do projeto (ponto de entrada). Rodar com: just web
 
-import httpx
+Todas as funcionalidades ficam aqui (plano experimental, seção 7.1); o front só conversa
+com a API por HTTP.
+"""
+
+from pathlib import Path
+
 import streamlit as st
 
-from web.api_client import ApiClient
+from web.common import get_client
 
-LABELS = {
-    "malignant": ("Suspeita de melanoma", "Recomenda-se encaminhar ao dermatologista."),
-    "benign": ("Sem sinais de malignidade", "Manter acompanhamento de rotina."),
-}
+VIEWS = Path(__file__).parent / "views"
 
-st.set_page_config(page_title="Triagem de melanoma", page_icon="🔬", layout="wide")
-
-
-@st.cache_resource
-def get_client() -> ApiClient:
-    return ApiClient()
-
-
-client = get_client()
+st.set_page_config(page_title="Triagem de melanoma — PDI", page_icon="🔬", layout="wide")
 
 with st.sidebar:
-    st.header("Status")
-    status = client.health()
+    status = get_client().health()
     if status is None:
         st.error("API indisponível")
     else:
         st.success(f"API online · modelo: {status['model']}")
 
-st.title("Triagem de lesões de pele")
-st.caption(
-    "Protótipo acadêmico de apoio à triagem. **Não substitui o diagnóstico médico nem a biópsia.**"
+nav = st.navigation(
+    {
+        "Protótipo": [
+            st.Page(VIEWS / "triagem.py", title="Triagem", icon=":material/stethoscope:"),
+        ],
+        "Experimentos": [
+            st.Page(VIEWS / "simulador.py", title="Simulador", icon=":material/compare:"),
+        ],
+    }
 )
-
-uploaded = st.file_uploader("Imagem dermatoscópica da lesão", type=["jpg", "jpeg", "png"])
-if uploaded is None:
-    st.stop()
-
-col_img, col_result = st.columns(2)
-col_img.image(uploaded, caption=uploaded.name, use_container_width=True)
-
-with col_result, st.spinner("Analisando..."):
-    try:
-        result = client.predict(uploaded.getvalue(), uploaded.name, uploaded.type)
-    except httpx.HTTPStatusError as exc:
-        st.error(f"A API recusou a imagem: {exc.response.json().get('detail', exc)}")
-        st.stop()
-    except httpx.HTTPError:
-        st.error("Não foi possível conectar à API.")
-        st.stop()
-
-    title, advice = LABELS[result["label"]]
-    prob = result["probability_malignant"]
-    (st.error if result["label"] == "malignant" else st.success)(f"**{title}**")
-    st.metric("Probabilidade de malignidade", f"{prob:.1%}")
-    st.progress(prob)
-    st.write(advice)
-    st.caption(
-        f"Modelo {result['model']} v{result['model_version']} · limiar {result['threshold']:.2f}"
-    )
-    if result["model"] == "dummy":
-        st.warning("Modelo de demonstração: o resultado não tem valor diagnóstico.")
+nav.run()
