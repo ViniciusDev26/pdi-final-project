@@ -223,3 +223,61 @@ def test_anotacao_shows_message_for_annotator_without_images(monkeypatch):
     at = AppTest.from_file(str(ANOTACAO)).run(timeout=10)
     next(s for s in at.selectbox if s.key == "ann_annotator").set_value("Carlos").run()
     assert at.info[0].value.startswith("Nenhuma imagem atribuída")
+
+
+EXPERIMENTOS = APP.parent / "views" / "experimentos.py"
+RESULTADOS = APP.parent / "views" / "resultados.py"
+
+
+def _scenarios(self):
+    return [
+        {
+            "id": "A0",
+            "group": "A",
+            "description": "Bruta",
+            "kind": "ablation",
+            "model": "rf",
+            "estimate": "≈ 1 min",
+            "uses_gpu": False,
+            "depends": [],
+            "config": {},
+            "status": {"state": "executando", "progress": 0.5, "message": "treinando"},
+            "has_results": False,
+        }
+    ]
+
+
+def test_experimentos_shows_board_and_queues(monkeypatch):
+    seen = {}
+    monkeypatch.setattr(ApiClient, "scenarios", _scenarios)
+    monkeypatch.setattr(ApiClient, "jobs", lambda self: {"executando": "A0", "fila": []})
+    monkeypatch.setattr(ApiClient, "scenario_log", lambda self, sid, tail=200: "linha 1")
+    monkeypatch.setattr(
+        ApiClient,
+        "enqueue",
+        lambda self, ids: seen.setdefault("ids", ids) and {"adicionados": ids},
+    )
+    at = AppTest.from_file(str(EXPERIMENTOS)).run(timeout=10)
+    assert not at.exception
+    assert at.metric[1].value == "A0"
+    next(b for b in at.button if b.label == "Executar todos").click().run()
+    assert seen["ids"] == ["todos"]
+
+
+def test_resultados_renders_empty_report(monkeypatch):
+    empty = {
+        "cenarios": [{"id": "A0", "grupo": "A", "descricao": "Bruta", "estado": "nao_executado"}],
+        "impacto_etapas": [],
+        "tecnicas": [],
+        "modelos": [],
+        "triagem": None,
+        "segmentacao": [],
+        "vies": {},
+        "local": {},
+        "tempo": {},
+    }
+    monkeypatch.setattr(ApiClient, "report", lambda self: empty)
+    monkeypatch.setattr(ApiClient, "figures", lambda self: {})
+    at = AppTest.from_file(str(RESULTADOS)).run(timeout=10)
+    assert not at.exception
+    assert at.info[0].value.startswith("Nenhum cenário executado")

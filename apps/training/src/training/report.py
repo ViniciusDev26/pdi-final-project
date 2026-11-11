@@ -233,7 +233,8 @@ def figure(name: str, report: dict | None = None) -> bytes:
             ax.plot(row["roc"]["fpr"], row["roc"]["tpr"], label=f"{row['id']} (AUC {auc:.3f})")
         ax.plot([0, 1], [0, 1], "--", color="gray", lw=1)
         ax.set(xlabel="1 − especificidade", ylabel="Sensibilidade", title=FIGURES[name])
-        ax.legend(loc="lower right")
+        if report["modelos"]:
+            ax.legend(loc="lower right")
     elif name == "confusao_modelos":
         rows = report["modelos"] or [{"id": "—", "matriz_confusao": [[0, 0], [0, 0]]}]
         fig, axes = plt.subplots(1, len(rows), figsize=(3 * len(rows), 3), squeeze=False)

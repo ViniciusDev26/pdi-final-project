@@ -78,3 +78,41 @@ class ApiClient:
         )
         resp.raise_for_status()
         return resp.json()
+
+    # ------------------------------------------------------------ experimentos e resultados
+
+    def _get(self, path: str, **params):
+        resp = self._http.get(path, params=params or None)
+        resp.raise_for_status()
+        return resp
+
+    def scenarios(self) -> list[dict]:
+        return self._get("/scenarios").json()
+
+    def jobs(self) -> dict:
+        return self._get("/jobs").json()
+
+    def enqueue(self, ids: list[str]) -> dict:
+        resp = self._http.post("/jobs", json={"ids": ids})
+        resp.raise_for_status()
+        return resp.json()
+
+    def cancel(self, sid: str) -> dict:
+        resp = self._http.delete(f"/jobs/{sid}")
+        resp.raise_for_status()
+        return resp.json()
+
+    def scenario_log(self, sid: str, tail: int = 200) -> str:
+        return self._get(f"/results/{sid}/log", tail=tail).text
+
+    def scenario_results(self, sid: str) -> dict:
+        return self._get(f"/results/{sid}").json()
+
+    def report(self) -> dict:
+        return self._get("/results/report").json()
+
+    def figures(self) -> dict:
+        return self._get("/results/figures").json()
+
+    def figure(self, name: str) -> bytes:
+        return self._get(f"/results/figures/{name}.png").content

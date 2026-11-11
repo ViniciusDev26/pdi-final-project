@@ -28,6 +28,8 @@ nav = st.navigation(
         ],
         "Experimentos": [
             st.Page(VIEWS / "simulador.py", title="Simulador", icon=":material/compare:"),
+            st.Page(VIEWS / "experimentos.py", title="Experimentos", icon=":material/science:"),
+            st.Page(VIEWS / "resultados.py", title="Resultados", icon=":material/monitoring:"),
             st.Page(VIEWS / "anotacao.py", title="Anotação", icon=":material/draw:"),
         ],
     }
