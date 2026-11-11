@@ -81,6 +81,7 @@ dependencies = [
     { name = "pdi" },
     { name = "pillow" },
     { name = "python-multipart" },
+    { name = "training" },
     { name = "uvicorn", extra = ["standard"] },
 ]
 
@@ -90,6 +91,7 @@ requires-dist = [
     { name = "pdi", editable = "packages/pdi" },
     { name = "pillow", specifier = ">=11.0" },
     { name = "python-multipart", specifier = ">=0.0.20" },
+    { name = "training", editable = "apps/training" },
     { name = "uvicorn", extras = ["standard"], specifier = ">=0.32" },
 ]
 

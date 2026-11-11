@@ -5,6 +5,7 @@ description = "API de inferência: recebe uma imagem dermatoscópica e retorna a
 requires-python = ">=3.12"
 dependencies = [
     "pdi",
+    "training",
     "fastapi>=0.115",
     "pillow>=11.0",
     "python-multipart>=0.0.20",
@@ -13,6 +14,7 @@ dependencies = [
 
 [tool.uv.sources]
 pdi = { workspace = true }
+training = { workspace = true }
 
 [build-system]
 requires = ["uv_build>=0.12,<0.13"]
