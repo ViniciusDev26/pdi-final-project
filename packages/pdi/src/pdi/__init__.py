@@ -5,6 +5,21 @@ aplique exatamente as mesmas transformações na inferência.
 """
 
 from pdi.io import load_rgb
-from pdi.pipeline import STAGE_IDS, PipelineConfig, PipelineResult, run
+from pdi.pipeline import (
+    SEGMENTATION_METHODS,
+    STAGE_IDS,
+    STAGES,
+    PipelineConfig,
+    PipelineResult,
+    run,
+)
 
-__all__ = ["STAGE_IDS", "PipelineConfig", "PipelineResult", "load_rgb", "run"]
+__all__ = [
+    "SEGMENTATION_METHODS",
+    "STAGES",
+    "STAGE_IDS",
+    "PipelineConfig",
+    "PipelineResult",
+    "load_rgb",
+    "run",
+]

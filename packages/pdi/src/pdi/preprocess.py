@@ -111,27 +111,75 @@ def remove_hair(image: np.ndarray, roi: np.ndarray) -> tuple[np.ndarray, np.ndar
     return out, mask
 
 
-def shades_of_gray(image: np.ndarray, roi: np.ndarray, p: int = SHADES_OF_GRAY_P) -> np.ndarray:
-    """P3: constância de cor Shades of Gray (FINLAYSON; TREZZI, 2004), estimada só na ROI."""
+def remove_hair_closing(image: np.ndarray, roi: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    """P2 (alternativa): fechamento morfológico, que apaga estruturas escuras e finas.
+
+    Mais simples que o DullRazor: não há inpainting, os pixels de pelo recebem o valor do
+    fechamento. Devolve (imagem, máscara dos pixels alterados).
+    """
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (HAIR_KERNEL_SIZE, HAIR_KERNEL_SIZE))
+    closed = cv2.morphologyEx(image, cv2.MORPH_CLOSE, kernel)
+    diff = closed.astype(np.int16) - image.astype(np.int16)
+    mask = (diff.max(axis=2) > HAIR_THRESHOLD) & roi
+    out = image.copy()
+    out[mask] = closed[mask]
+    return out, mask
+
+
+def shades_of_gray(image: np.ndarray, roi: np.ndarray, p: float = SHADES_OF_GRAY_P) -> np.ndarray:
+    """P3: constância de cor Shades of Gray (FINLAYSON; TREZZI, 2004), estimada só na ROI.
+
+    A norma de Minkowski de ordem `p` estima a cor da iluminação em cada canal:
+    p = 1 é o Gray World (média), p = ∞ é o White Patch (máximo).
+    """
     pixels = image[roi].astype(np.float64)
-    norms = np.power(np.mean(np.power(pixels, p), axis=0), 1.0 / p)
+    if np.isinf(p):
+        norms = pixels.max(axis=0)
+    else:
+        norms = np.power(np.mean(np.power(pixels, p), axis=0), 1.0 / p)
     gains = norms.mean() / np.maximum(norms, 1e-6)
     out = image.astype(np.float64) * gains
     return np.clip(out, 0, 255).astype(np.uint8)
 
 
-def clahe(image: np.ndarray, roi: np.ndarray) -> np.ndarray:
-    """P4: CLAHE no canal L do CIELab; a cromaticidade (a, b) não é alterada."""
+def gray_world(image: np.ndarray, roi: np.ndarray) -> np.ndarray:
+    """P3 (alternativa): Gray World, caso p = 1 do Shades of Gray."""
+    return shades_of_gray(image, roi, p=1)
+
+
+def white_patch(image: np.ndarray, roi: np.ndarray) -> np.ndarray:
+    """P3 (alternativa): White Patch (max-RGB), caso p = ∞ do Shades of Gray."""
+    return shades_of_gray(image, roi, p=np.inf)
+
+
+def _apply_to_l_channel(image: np.ndarray, roi: np.ndarray, fn) -> np.ndarray:
     lab = cv2.cvtColor(image, cv2.COLOR_RGB2LAB)
-    op = cv2.createCLAHE(clipLimit=CLAHE_CLIP_LIMIT, tileGridSize=CLAHE_TILE_GRID)
-    lab[..., 0] = op.apply(lab[..., 0])
+    lab[..., 0] = fn(lab[..., 0])
     out = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
     out[~roi] = image[~roi]
     return out
 
 
+def clahe(image: np.ndarray, roi: np.ndarray) -> np.ndarray:
+    """P4: CLAHE no canal L do CIELab; a cromaticidade (a, b) não é alterada."""
+    op = cv2.createCLAHE(clipLimit=CLAHE_CLIP_LIMIT, tileGridSize=CLAHE_TILE_GRID)
+    return _apply_to_l_channel(image, roi, op.apply)
+
+
+def equalize(image: np.ndarray, roi: np.ndarray) -> np.ndarray:
+    """P4 (alternativa): equalização global de histograma no canal L do CIELab."""
+    return _apply_to_l_channel(image, roi, cv2.equalizeHist)
+
+
 def denoise(image: np.ndarray, roi: np.ndarray) -> np.ndarray:
     """P5: filtro da mediana, que suaviza ruído preservando a borda da lesão."""
     out = cv2.medianBlur(image, MEDIAN_KERNEL_SIZE)
+    out[~roi] = image[~roi]
+    return out
+
+
+def gaussian(image: np.ndarray, roi: np.ndarray) -> np.ndarray:
+    """P5 (alternativa): filtro gaussiano, que suaviza ruído mas também a borda."""
+    out = cv2.GaussianBlur(image, (MEDIAN_KERNEL_SIZE, MEDIAN_KERNEL_SIZE), 0)
     out[~roi] = image[~roi]
     return out

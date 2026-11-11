@@ -205,3 +205,83 @@ def test_dice_and_iou():
     assert dice(a, b) == pytest.approx(0.5)
     assert iou(a, b) == pytest.approx(1 / 3)
     assert dice(a & False, b & False) == 1.0
+
+
+# ---------------------------------------------------------------- técnicas alternativas
+
+
+def test_using_builds_technique_swap_scenarios():
+    t4 = PipelineConfig().using(P4="equalize")  # cenário T4
+    assert t4.technique("P4") == "equalize"
+    assert t4.technique("P3") == "shades_of_gray"
+    assert PipelineConfig().using(P3=None) == PipelineConfig().without("P3")
+
+
+def test_invalid_technique_is_rejected():
+    with pytest.raises(ValueError):
+        PipelineConfig(contrast="sharpen")
+    with pytest.raises(ValueError):
+        PipelineConfig().using(P2="laser")
+    with pytest.raises(ValueError):
+        PipelineConfig(segmentation="kmeans")
+
+
+def test_config_roundtrips_through_dict():
+    cfg = PipelineConfig().using(P3="white_patch", P5="gaussian").without("P2")
+    assert PipelineConfig.from_dict(cfg.to_dict()) == cfg
+    with pytest.raises(ValueError):
+        PipelineConfig.from_dict({"P9": "x"})
+
+
+@pytest.mark.parametrize(
+    "stage_id",
+    [sid for sid in STAGE_IDS],
+)
+def test_every_registered_technique_runs(stage_id):
+    from pdi import STAGES
+
+    img = _add_hair(_add_vignette(_lesion_image()[0]))
+    stage = next(s for s in STAGES if s.id == stage_id)
+    for technique in stage.techniques:
+        result = run(img, PipelineConfig().using(**{stage_id: technique.key}))
+        out = result.stage(stage_id)
+        assert out.technique == technique.key and out.technique_label == technique.label
+        assert result.image.shape == img.shape and result.image.dtype == np.uint8
+
+
+def test_stage_output_reports_disabled_stage():
+    result = run(_lesion_image()[0], PipelineConfig().without("P4"))
+    assert not result.stage("P4").enabled and result.stage("P4").technique is None
+
+
+def test_hair_closing_removes_thin_dark_lines():
+    clean = _skin()
+    hairy = _add_hair(clean)
+    out, mask = preprocess.remove_hair_closing(hairy, preprocess.full_roi(hairy))
+    hair_px = np.abs(hairy.astype(int) - clean.astype(int)).sum(axis=2) > 50
+    assert mask[hair_px].mean() > 0.9
+    assert np.abs(out[hair_px].astype(int) - clean[hair_px].astype(int)).mean() < 20
+
+
+@pytest.mark.parametrize("fn", [preprocess.gray_world, preprocess.white_patch])
+def test_color_constancy_alternatives_remove_cast(fn):
+    img = _skin().astype(np.float64)
+    cast = np.clip(img * (1.3, 1.0, 0.7), 0, 255).astype(np.uint8)
+    out = fn(cast, preprocess.full_roi(cast))
+    assert np.ptp(out.reshape(-1, 3).mean(axis=0)) < np.ptp(cast.reshape(-1, 3).mean(axis=0)) / 3
+
+
+def test_equalize_stretches_low_contrast_image():
+    img, _ = _lesion_image()
+    low = (img.astype(np.float64) * 0.3 + 100).astype(np.uint8)  # histograma comprimido
+    out = preprocess.equalize(low, preprocess.full_roi(low))
+    gray = lambda x: cv2.cvtColor(x, cv2.COLOR_RGB2GRAY)  # noqa: E731
+    assert gray(out).std() > 2 * gray(low).std()
+
+
+def test_gaussian_smooths_noise():
+    rng = np.random.default_rng(1)
+    noisy = np.clip(_skin().astype(int) + rng.normal(0, 20, (SIZE, SIZE, 3)), 0, 255)
+    noisy = noisy.astype(np.uint8)
+    out = preprocess.gaussian(noisy, preprocess.full_roi(noisy))
+    assert out.std(axis=(0, 1)).mean() < noisy.std(axis=(0, 1)).mean() / 2

@@ -1,9 +1,9 @@
 """Pipeline configurável: pré-processamento (P1–P5) seguido da segmentação (S).
 
-Cada etapa de pré-processamento pode ser ligada ou desligada pela `PipelineConfig`, o que
-permite montar os cenários acumulativos (A) e de remoção (L) do plano experimental
-(docs/PDI_Etapa2_Plano_Experimental.md). `run` devolve todas as imagens intermediárias e
-o tempo de cada etapa, usados pelo relatório, pelo simulador e pela página interativa.
+Cada etapa de pré-processamento pode ser desligada ou executada com uma das técnicas do
+registro `STAGES` (plano experimental, seção 6.1). Isso permite montar os cenários A, L e
+T de docs/PDI_Etapa2_Plano_Experimental.md e qualquer combinação do simulador.
+`run` devolve todas as imagens intermediárias e o tempo de cada etapa.
 
 Treino e API devem chamar sempre `run`, para que a inferência aplique exatamente o mesmo
 processamento usado no treino.
@@ -11,34 +11,132 @@ processamento usado no treino.
 
 import time
 from collections.abc import Callable
-from dataclasses import asdict, dataclass, field, replace
+from dataclasses import asdict, dataclass, field, fields, replace
 
 import numpy as np
 
 from pdi import preprocess
 from pdi.segment import SegmentationMethod, segment
 
-# ordem fixa das etapas de pré-processamento: (ID do plano, campo da config, nome)
-PREPROCESS_STAGES: tuple[tuple[str, str, str], ...] = (
-    ("P1", "vignette", "Recorte da vinheta"),
-    ("P2", "hair", "Remoção de pelos"),
-    ("P3", "color", "Normalização de cor"),
-    ("P4", "contrast", "Realce de contraste (CLAHE)"),
-    ("P5", "denoise", "Filtragem (mediana)"),
+# uma técnica recebe (imagem, roi) e devolve (imagem, máscara opcional produzida pela etapa)
+StageFn = Callable[[np.ndarray, np.ndarray], tuple[np.ndarray, np.ndarray | None]]
+
+
+@dataclass(frozen=True)
+class Technique:
+    key: str
+    label: str
+    fn: StageFn
+
+
+@dataclass(frozen=True)
+class Stage:
+    id: str  # ID do plano experimental
+    field: str  # campo correspondente em PipelineConfig
+    name: str
+    techniques: tuple[Technique, ...]  # a primeira é a padrão
+
+    @property
+    def default(self) -> str:
+        return self.techniques[0].key
+
+    def technique(self, key: str) -> Technique:
+        for t in self.techniques:
+            if t.key == key:
+                return t
+        valid = [t.key for t in self.techniques]
+        raise ValueError(f"técnica {key!r} inválida para {self.id}; válidas: {valid}")
+
+
+def _no_mask(fn: Callable[[np.ndarray, np.ndarray], np.ndarray]) -> StageFn:
+    return lambda img, roi: (fn(img, roi), None)
+
+
+def _vignette(img: np.ndarray, roi: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    res = preprocess.remove_vignette(img)
+    return res.image, res.mask
+
+
+# ordem fixa das etapas
+STAGES: tuple[Stage, ...] = (
+    Stage(
+        "P1",
+        "vignette",
+        "Recorte da vinheta",
+        (Technique("fill", "Preenchimento com a cor da pele", _vignette),),
+    ),
+    Stage(
+        "P2",
+        "hair",
+        "Remoção de pelos",
+        (
+            Technique("dullrazor", "DullRazor (black-hat + inpainting)", preprocess.remove_hair),
+            Technique("closing", "Fechamento morfológico", preprocess.remove_hair_closing),
+        ),
+    ),
+    Stage(
+        "P3",
+        "color",
+        "Normalização de cor",
+        (
+            Technique(
+                "shades_of_gray", "Shades of Gray (p = 6)", _no_mask(preprocess.shades_of_gray)
+            ),
+            Technique("gray_world", "Gray World (p = 1)", _no_mask(preprocess.gray_world)),
+            Technique("white_patch", "White Patch (p = ∞)", _no_mask(preprocess.white_patch)),
+        ),
+    ),
+    Stage(
+        "P4",
+        "contrast",
+        "Realce de contraste",
+        (
+            Technique("clahe", "CLAHE (canal L)", _no_mask(preprocess.clahe)),
+            Technique(
+                "equalize", "Equalização global de histograma", _no_mask(preprocess.equalize)
+            ),
+        ),
+    ),
+    Stage(
+        "P5",
+        "denoise",
+        "Filtragem",
+        (
+            Technique("median", "Mediana", _no_mask(preprocess.denoise)),
+            Technique("gaussian", "Gaussiano", _no_mask(preprocess.gaussian)),
+        ),
+    ),
 )
-STAGE_IDS = tuple(sid for sid, _, _ in PREPROCESS_STAGES)
-_FIELD = {sid: f for sid, f, _ in PREPROCESS_STAGES}
+STAGE_IDS = tuple(s.id for s in STAGES)
+_BY_ID = {s.id: s for s in STAGES}
+
+SEGMENTATION_METHODS: dict[str, str] = {
+    "otsu": "Otsu (global)",
+    "adaptive": "Limiarização adaptativa (gaussiana)",
+}
 
 
 @dataclass(frozen=True)
 class PipelineConfig:
-    vignette: bool = True
-    hair: bool = True
-    color: bool = True
-    contrast: bool = True
-    denoise: bool = True
+    """Técnica de cada etapa; `None` desliga a etapa. Os padrões formam o cenário A5."""
+
+    vignette: str | None = "fill"
+    hair: str | None = "dullrazor"
+    color: str | None = "shades_of_gray"
+    contrast: str | None = "clahe"
+    denoise: str | None = "median"
     segmentation: SegmentationMethod | None = "otsu"  # None desliga a etapa S
     seg_postprocess: bool = True
+
+    def __post_init__(self):
+        for stage in STAGES:
+            key = getattr(self, stage.field)
+            if key is not None:
+                stage.technique(key)  # valida
+        if self.segmentation is not None and self.segmentation not in SEGMENTATION_METHODS:
+            raise ValueError(
+                f"segmentação {self.segmentation!r} inválida; válidas: {list(SEGMENTATION_METHODS)}"
+            )
 
     @classmethod
     def raw(cls) -> "PipelineConfig":
@@ -47,17 +145,25 @@ class PipelineConfig:
 
     @classmethod
     def only(cls, *stage_ids: str) -> "PipelineConfig":
-        """Liga apenas as etapas indicadas (ex.: `only("P1", "P2")` = cenário A2)."""
+        """Liga só as etapas indicadas, com a técnica padrão (ex.: `only("P1", "P2")` = A2)."""
         _check(stage_ids)
-        return cls(**{f: sid in stage_ids for sid, f, _ in PREPROCESS_STAGES})
+        return cls(**{s.field: (s.default if s.id in stage_ids else None) for s in STAGES})
 
     def without(self, *stage_ids: str) -> "PipelineConfig":
-        """Desliga as etapas indicadas (ex.: `PipelineConfig().without("P3")` = cenário L3)."""
+        """Desliga as etapas indicadas (ex.: `PipelineConfig().without("P3")` = L3)."""
         _check(stage_ids)
-        return replace(self, **{_FIELD[sid]: False for sid in stage_ids})
+        return replace(self, **{_BY_ID[sid].field: None for sid in stage_ids})
+
+    def using(self, **techniques: str | None) -> "PipelineConfig":
+        """Troca a técnica de etapas (ex.: `PipelineConfig().using(P4="equalize")` = T4)."""
+        _check(tuple(techniques))
+        return replace(self, **{_BY_ID[sid].field: key for sid, key in techniques.items()})
+
+    def technique(self, stage_id: str) -> str | None:
+        return getattr(self, _BY_ID[stage_id].field)
 
     def enabled(self, stage_id: str) -> bool:
-        return getattr(self, _FIELD[stage_id])
+        return self.technique(stage_id) is not None
 
     @property
     def enabled_stages(self) -> tuple[str, ...]:
@@ -65,6 +171,13 @@ class PipelineConfig:
 
     def to_dict(self) -> dict:
         return asdict(self)
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "PipelineConfig":
+        unknown = set(data) - {f.name for f in fields(cls)}
+        if unknown:
+            raise ValueError(f"campos desconhecidos na configuração: {sorted(unknown)}")
+        return cls(**data)
 
 
 def _check(stage_ids: tuple[str, ...]) -> None:
@@ -77,10 +190,15 @@ def _check(stage_ids: tuple[str, ...]) -> None:
 class StageOutput:
     id: str
     name: str
-    enabled: bool
+    technique: str | None  # chave da técnica usada; None = etapa desligada
+    technique_label: str | None
     image: np.ndarray  # imagem após a etapa (igual à anterior se a etapa estiver desligada)
     seconds: float
     mask: np.ndarray | None = None  # máscara produzida pela etapa (vinheta, pelos), se houver
+
+    @property
+    def enabled(self) -> bool:
+        return self.technique is not None
 
 
 @dataclass(frozen=True)
@@ -109,32 +227,25 @@ def run(image: np.ndarray, config: PipelineConfig | None = None) -> PipelineResu
     current = image
     roi = preprocess.full_roi(image)
     vignette_detected = False
-    stages: list[StageOutput] = []
+    outputs: list[StageOutput] = []
 
-    def step(sid: str, name: str, fn: Callable[[np.ndarray], tuple[np.ndarray, np.ndarray | None]]):
-        nonlocal current
-        if not config.enabled(sid):
-            stages.append(StageOutput(sid, name, False, current, 0.0))
-            return
+    for stage in STAGES:
+        key = config.technique(stage.id)
+        if key is None:
+            outputs.append(StageOutput(stage.id, stage.name, None, None, current, 0.0))
+            continue
+        technique = stage.technique(key)
         t0 = time.perf_counter()
-        current, mask = fn(current)
-        stages.append(StageOutput(sid, name, True, current, time.perf_counter() - t0, mask))
-
-    def p1(img):
-        nonlocal roi, vignette_detected
-        res = preprocess.remove_vignette(img)
-        roi, vignette_detected = ~res.mask, res.detected
-        return res.image, res.mask
-
-    names = {sid: name for sid, _, name in PREPROCESS_STAGES}
-    step("P1", names["P1"], p1)
-    step("P2", names["P2"], lambda img: preprocess.remove_hair(img, roi))
-    step("P3", names["P3"], lambda img: (preprocess.shades_of_gray(img, roi), None))
-    step("P4", names["P4"], lambda img: (preprocess.clahe(img, roi), None))
-    step("P5", names["P5"], lambda img: (preprocess.denoise(img, roi), None))
+        current, mask = technique.fn(current, roi)
+        seconds = time.perf_counter() - t0
+        if stage.id == "P1":  # a vinheta define a região útil das etapas seguintes
+            roi, vignette_detected = ~mask, bool(mask.any())
+        outputs.append(
+            StageOutput(stage.id, stage.name, key, technique.label, current, seconds, mask)
+        )
 
     lesion_mask = None
-    timings = {s.id: s.seconds for s in stages}
+    timings = {s.id: s.seconds for s in outputs}
     if config.segmentation is not None:
         t0 = time.perf_counter()
         lesion_mask = segment(current, roi, config.segmentation, config.seg_postprocess)
@@ -143,7 +254,7 @@ def run(image: np.ndarray, config: PipelineConfig | None = None) -> PipelineResu
     return PipelineResult(
         config=config,
         input=image,
-        stages=tuple(stages),
+        stages=tuple(outputs),
         image=current,
         roi=roi,
         lesion_mask=lesion_mask,
