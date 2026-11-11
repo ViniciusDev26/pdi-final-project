@@ -8,3 +8,5 @@ docs
 models
 runs
 *.pdf
+results
+experiments

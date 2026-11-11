@@ -53,3 +53,19 @@ def test_scenarios_cover_every_planned_id():
     assert all(s.pipeline is not None for s in presets())
     for s in SCENARIOS.values():
         assert all(d in SCENARIOS for d in s.depends)
+
+
+def test_vectorized_bootstrap_matches_sklearn_per_resample():
+    from sklearn.metrics import roc_auc_score
+
+    rng = np.random.default_rng(3)
+    y = rng.integers(0, 2, 300)
+    p = np.round(rng.random(300) * 0.5 + 0.3 * y, 2)  # com empates
+    w = evaluation.bootstrap_weights(len(y), n_boot=20)
+    idx = evaluation.bootstrap_indices(len(y), n_boot=20)
+    fast = evaluation.bootstrap_metrics(y, p, 0.5, w)
+    for b in range(20):
+        slow = evaluation.point_metrics(y[idx[b]], p[idx[b]], 0.5)
+        assert fast["auc"][b] == pytest.approx(roc_auc_score(y[idx[b]], p[idx[b]]))
+        for m in evaluation.METRICS:
+            assert fast[m][b] == pytest.approx(slow[m])

@@ -31,9 +31,15 @@ api:
 web:
     uv run --package web streamlit run apps/web/src/web/app.py
 
-# Sobe API e front juntos via Docker Compose
+# Sobe API e front juntos via Docker Compose (só CPU)
 up:
+    PDI_UID=$(id -u) PDI_GID=$(id -g) PDI_GIT_COMMIT=$(git rev-parse --short HEAD) \
     docker compose -f infra/docker-compose.yml up --build
+
+# Sobe o sistema no servidor de experimentos, com a GPU NVIDIA no contêiner da API
+up-gpu:
+    PDI_UID=$(id -u) PDI_GID=$(id -g) PDI_GIT_COMMIT=$(git rev-parse --short HEAD) \
+    docker compose -f infra/docker-compose.yml -f infra/docker-compose.gpu.yml up --build -d
 
 # Roda todos os testes
 test *args:

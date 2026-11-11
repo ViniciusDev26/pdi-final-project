@@ -1,0 +1,12 @@
+# Override para o servidor de experimentos (desktop com RTX 4060 Ti): repassa a GPU ao
+# contêiner da API, onde a fila executa os cenários (inclusive a CNN).
+# Separado do compose principal para que ele continue funcionando sem NVIDIA.
+# A GPU é exposta por CDI (nvidia-ctk cdi generate); requer Docker ≥ 25.
+services:
+  api:
+    devices:
+      - nvidia.com/gpu=all
+    # DataLoader com vários processos usa memória compartilhada
+    shm_size: 8gb
+    environment:
+      NVIDIA_VISIBLE_DEVICES: all

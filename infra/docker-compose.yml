@@ -1,5 +1,7 @@
 name: pdi-melanoma
 
+# Modo padrão (só CPU). Para o servidor de experimentos com GPU NVIDIA, use também o
+# override: just up-gpu (docker compose -f docker-compose.yml -f docker-compose.gpu.yml).
 services:
   api:
     build:
@@ -8,12 +10,21 @@ services:
       args:
         APP: api
     command: uvicorn api.main:app --host 0.0.0.0 --port 8000
+    # arquivos gravados em results/ e experiments/ ficam com o usuário do host
+    user: "${PDI_UID:-1000}:${PDI_GID:-1000}"
     ports:
       - "8000:8000"
     volumes:
-      - ../models:/app/models:ro
+      - ../data:/app/data:ro
+      - ../models:/app/models
+      - ../results:/app/results
+      - ../experiments:/app/experiments
     environment:
       PDI_MODELS_DIR: /app/models
+      PDI_GIT_COMMIT: ${PDI_GIT_COMMIT:-desconhecido}
+      HOME: /tmp
+      TORCH_HOME: /app/results/_cache/torch
+      MPLCONFIGDIR: /tmp/matplotlib
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
       interval: 5s
