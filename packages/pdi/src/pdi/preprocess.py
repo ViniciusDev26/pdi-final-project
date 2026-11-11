@@ -14,8 +14,9 @@ VIGNETTE_DARK_THRESHOLD = 40  # nível de cinza abaixo do qual a borda é consid
 VIGNETTE_CORNER_SIZE = 10  # lado (px) do quadrado de cada canto inspecionado
 VIGNETTE_MIN_DARK_CORNERS = 2  # nº mínimo de cantos escuros para declarar vinheta
 # área mínima (fração da imagem) para ser vinheta de dermatoscópio e não só cantos
-# levemente escurecidos; com 3% a detecção reproduz a análise exploratória da Etapa 1
-# (≈30% das malignas de treino, ≈43% das de teste, <1,5% das benignas)
+# levemente escurecidos. Calibrado em treino/validação (regra do teste intocado): com 3%
+# a detecção dá 29,2% das malignas e 1,1% das benignas no treino (validação: 28,3% e
+# 1,1%), coerente com a análise exploratória da Etapa 1 (≈31% e 0,6%)
 VIGNETTE_MIN_AREA = 0.03
 # a transição vinheta → pele é um degradê: a máscara cresce sobre pixels mais escuros que
 # esta fração do brilho da pele, até esta distância (px) do núcleo escuro
