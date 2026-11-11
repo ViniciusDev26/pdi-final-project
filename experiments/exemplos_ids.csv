@@ -1,0 +1,7 @@
+path,label,vinheta
+train/malignant/melanoma_5143.jpg,malignant,False
+train/benign/melanoma_3835.jpg,benign,False
+train/benign/melanoma_1104.jpg,benign,False
+train/malignant/melanoma_6447.jpg,malignant,True
+train/benign/melanoma_3766.jpg,benign,True
+train/malignant/melanoma_8567.jpg,malignant,False

@@ -169,3 +169,57 @@ def test_features_table_has_one_column_per_combination():
     assert list(table.columns) == ["A0", "A5"]
     assert table.loc[("forma", "solidez"), "A0"] == 0.9
     assert math.isnan(table.loc[("cor", "n_cores"), "A5"])
+
+
+ANOTACAO = APP.parent / "views" / "anotacao.py"
+
+
+def _ann_listing(conjunto):
+    return {
+        "conjunto": conjunto,
+        "annotators": ["Renan", "Guilherme", "Carlos"],
+        "items": [
+            {
+                "name": "melanoma_1",
+                "path": "test/benign/melanoma_1.jpg",
+                "label": "benign",
+                "vinheta": False,
+                "responsavel": "Renan",
+                "compartilhada": False,
+                "annotators": ["Renan"],
+                "done": {"Renan": False},
+            }
+        ],
+        "progress": [{"conjunto": conjunto, "anotador": "Renan", "total": 1, "feitas": 0}],
+        "inter_annotator": [],
+        "inter_annotator_mean": None,
+    }
+
+
+def test_anotacao_renders_pending_image(monkeypatch):
+    import base64
+    from io import BytesIO
+
+    from PIL import Image
+
+    buf = BytesIO()
+    Image.new("RGB", (300, 300), (200, 160, 140)).save(buf, format="PNG")
+    image = base64.b64encode(buf.getvalue()).decode()
+    monkeypatch.setattr(ApiClient, "annotations", lambda self, c: _ann_listing(c))
+    monkeypatch.setattr(
+        ApiClient,
+        "annotation_image",
+        lambda self, c, n, a: {"name": n, "image": image, "mask": None},
+    )
+    at = AppTest.from_file(str(ANOTACAO)).run(timeout=10)
+    assert not at.exception
+    assert at.session_state["ann_annotator"] == "Renan"
+    save = next(b for b in at.button if b.label == "Salvar máscara")
+    assert save.disabled  # sem contorno ainda
+
+
+def test_anotacao_shows_message_for_annotator_without_images(monkeypatch):
+    monkeypatch.setattr(ApiClient, "annotations", lambda self, c: _ann_listing(c))
+    at = AppTest.from_file(str(ANOTACAO)).run(timeout=10)
+    next(s for s in at.selectbox if s.key == "ann_annotator").set_value("Carlos").run()
+    assert at.info[0].value.startswith("Nenhuma imagem atribuída")

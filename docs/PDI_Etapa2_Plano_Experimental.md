@@ -273,9 +273,11 @@ diferenças venham só da entrada.
 - **O que anotar:** toda a área pigmentada da lesão, inclusive a periferia mais clara;
   pelos sobre a lesão são considerados parte dela; vinheta, régua e marcações ficam de
   fora.
-- **Formato:** PNG binário 300 × 300, um por imagem, em
-  `experiments/mascaras/{val,teste}/<arquivo>.png`, **versionado no git** (arquivos
-  pequenos), com o nome do anotador registrado em `experiments/mascaras/anotadores.csv`.
+- **Formato:** PNG binário 300 × 300, um por imagem e anotador, em
+  `experiments/mascaras/{val,teste}/<anotador>/<arquivo>.png`, **versionado no git**
+  (arquivos pequenos); cada salvamento é registrado em `experiments/mascaras/anotadores.csv`.
+  A máscara de referência é a do responsável pela imagem (coluna `responsavel` da lista);
+  nas compartilhadas, as dos outros dois servem só ao Dice entre anotadores.
 - **Divisão:** cada integrante anota 1/3 das imagens. **10 imagens do teste são anotadas
   pelos três**: o Dice entre anotadores é reportado como referência — uma segmentação
   automática com Dice próximo ao dos anotadores entre si está no limite do que a anotação
@@ -582,3 +584,4 @@ prazo for conhecido.
 | 2026-11-10 | Revisão de lacunas: regra do teste intocado estendida aos parâmetros de PDI; 20 máscaras da validação para ajuste e 60 do teste só para avaliação, com 10 compartilhadas para Dice entre anotadores (5.8) e página Anotação; P0 (normalização da entrada); lista fechada de características (3.1) e limitação do critério D; protocolo de treino congelado (5.7); regra de escolha do modelo da Triagem; comparações entre etapas declaradas exploratórias; réguas só qualitativas na Q3; entrega no AVA com modo leitura e release (7.3); cronograma por marcos (11); opcionais (10.1) | Revisão do plano antes de existir qualquer resultado, para evitar vazamento do teste e lacunas de método e de entrega |
 | 2026-11-10 | Correção do P2: limiar do black-hat 12 → 40 e filtro de alongamento ≥ 4, calibrados com pelos sintéticos em 150 imagens de treino e 150 de validação | O DullRazor apagava 41% dos pixels da lesão; agora 2,6%, com 0,5 dB a menos de PSNR que o melhor candidato sem filtro |
 | 2026-11-10 | A lista fechada de características (3.1) resulta em 38 valores, não "cerca de 45" | Contagem exata da implementação; nenhuma característica incluída ou removida |
+| 2026-11-10 | Listas de `experiments/` geradas (`training.experiment_lists`, semente 42); o teste tem só 4 benignas com vinheta, então a lista de anotação do teste tem 4 (não 15) benignas com vinheta e 15 malignas com vinheta; máscaras guardadas por anotador (`mascaras/<conjunto>/<anotador>/`) | A base não tem benignas com vinheta suficientes no teste; guardar por anotador permite o Dice entre anotadores nas 10 compartilhadas |

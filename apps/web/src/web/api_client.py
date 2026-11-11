@@ -56,3 +56,25 @@ class ApiClient:
         )
         resp.raise_for_status()
         return resp.json()
+
+    # ------------------------------------------------------------ anotação
+
+    def annotations(self, conjunto: str) -> dict:
+        resp = self._http.get(f"/annotations/{conjunto}")
+        resp.raise_for_status()
+        return resp.json()
+
+    def annotation_image(self, conjunto: str, name: str, annotator: str) -> dict:
+        resp = self._http.get(f"/annotations/{conjunto}/{name}", params={"annotator": annotator})
+        resp.raise_for_status()
+        return resp.json()
+
+    def save_annotation(
+        self, conjunto: str, name: str, annotator: str, points: list[list[float]]
+    ) -> dict:
+        resp = self._http.put(
+            f"/annotations/{conjunto}/{name}",
+            data={"annotator": annotator, "points": json.dumps(points)},
+        )
+        resp.raise_for_status()
+        return resp.json()
