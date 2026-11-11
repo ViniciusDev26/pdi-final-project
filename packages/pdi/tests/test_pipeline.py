@@ -311,3 +311,22 @@ def test_run_normalizes_input_of_any_size():
     assert result.original_shape == (600, 800, 3)
     assert result.input.shape == result.image.shape == (SIZE, SIZE, 3)
     assert result.lesion_mask.shape == (SIZE, SIZE)
+
+
+# ---------------------------------------------------------------- P2 (correção)
+
+
+def test_hair_mask_ignores_round_dark_globules_inside_lesion():
+    img, lesion = _lesion_image()
+    for cx, cy in ((130, 130), (170, 140), (150, 175)):  # glóbulos escuros na lesão
+        cv2.circle(img, (cx, cy), 3, (10, 8, 6), thickness=-1)
+    mask = preprocess.hair_mask(img, preprocess.full_roi(img))
+    assert mask[lesion].mean() < 0.01
+
+
+def test_keep_elongated_separates_lines_from_blobs():
+    m = np.zeros((100, 100), np.uint8)
+    cv2.line(m, (5, 10), (95, 30), 1, 2)
+    cv2.circle(m, (50, 70), 6, 1, -1)
+    kept = preprocess.keep_elongated(m.astype(bool), 4.0)
+    assert kept[20, 50] and not kept[70, 50]

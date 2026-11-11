@@ -104,10 +104,12 @@ Cada etapa gera uma figura "antes → depois" com as mesmas 6 imagens de exemplo
 fixa em `experiments/exemplos_ids.csv`), usada na apresentação para mostrar a técnica
 funcionando.
 
-> **Problema conhecido (P2):** na implementação inicial, o DullRazor trata pontos e
-> glóbulos escuros *dentro* da lesão como pelos e os apaga, o que afeta a textura. A
-> correção prevista é aceitar como pelo só componentes finos e alongados (razão entre
-> comprimento e largura). O ajuste segue a regra do teste intocado.
+> **Correção do P2 (resolvido):** na implementação inicial, o DullRazor tratava pontos e
+> glóbulos escuros *dentro* da lesão como pelos e apagava 41% dos pixels da lesão. A
+> correção aceita como pelo só componentes finos e alongados (comprimento² / área ≥ 4) e
+> sobe o limiar do black-hat de 12 para 40; com isso 2,6% da lesão é alterada (treino),
+> mantendo 95% de cobertura dos pelos sintéticos. Calibrado só em treino/validação
+> (`training.calibrate_p2`); a evidência está junto às constantes em `pdi/preprocess.py`.
 
 ### 3.1 Lista de características (F)
 
@@ -578,3 +580,5 @@ prazo for conhecido.
 | 2026-11-10 | Sistema web como interface única (seção 7.1): páginas Triagem, Simulador, Experimentos, Resultados e Base de dados; execução de cenários pela web via fila na API | Requisito da equipe: nenhuma funcionalidade pode depender só do terminal |
 | 2026-11-10 | Experimentos e treino da CNN no desktop com RTX 4060 Ti (CUDA), sistema completo rodando nele via Docker com GPU; Mac apenas para desenvolvimento | GPU NVIDIA disponível na equipe; a GPU da Apple não é acessível dentro do Docker |
 | 2026-11-10 | Revisão de lacunas: regra do teste intocado estendida aos parâmetros de PDI; 20 máscaras da validação para ajuste e 60 do teste só para avaliação, com 10 compartilhadas para Dice entre anotadores (5.8) e página Anotação; P0 (normalização da entrada); lista fechada de características (3.1) e limitação do critério D; protocolo de treino congelado (5.7); regra de escolha do modelo da Triagem; comparações entre etapas declaradas exploratórias; réguas só qualitativas na Q3; entrega no AVA com modo leitura e release (7.3); cronograma por marcos (11); opcionais (10.1) | Revisão do plano antes de existir qualquer resultado, para evitar vazamento do teste e lacunas de método e de entrega |
+| 2026-11-10 | Correção do P2: limiar do black-hat 12 → 40 e filtro de alongamento ≥ 4, calibrados com pelos sintéticos em 150 imagens de treino e 150 de validação | O DullRazor apagava 41% dos pixels da lesão; agora 2,6%, com 0,5 dB a menos de PSNR que o melhor candidato sem filtro |
+| 2026-11-10 | A lista fechada de características (3.1) resulta em 38 valores, não "cerca de 45" | Contagem exata da implementação; nenhuma característica incluída ou removida |

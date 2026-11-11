@@ -42,6 +42,8 @@ comparando PDI tradicional com CNN. Visão geral e comandos no [README](README.m
 Pronto:
 - Pipeline P0 (sempre ligada) + P1–P5 + S configurável por técnica (`pdi.pipeline`), com
   técnicas alternativas da seção 6.1; cenários A, L, T, S em `training.scenarios`.
+- P2 corrigido (limiar 40 + alongamento ≥ 4, calibrado em `training.calibrate_p2` com
+  pelos sintéticos de `pdi.artifacts`): apaga 2,6% da lesão em vez de 41%.
 - Características F (`pdi.features`, lista fechada da seção 3.1: 38 valores em 3 grupos);
   NaN quando a segmentação vem vazia (≈1% numa amostra de 200 imagens de treino).
 - API: `/pipeline/options`, `/pipeline`, `/compare` (com as características F);
@@ -50,13 +52,11 @@ Pronto:
   sem probabilidade por enquanto).
 
 Próximo (marcos da seção 11 do plano):
-- **M1 (restante):** correção do P2, página Anotação.
+- **M1 (restante):** página Anotação.
 - **M3:** engine de cenários + fila na API + páginas Experimentos e Resultados;
   cenários tradicionais.
 - **M4:** CNN (EfficientNet-B0, protocolo da seção 5.7) no desktop; Docker Compose com
   GPU (arquivo de override separado, para o compose continuar funcionando sem NVIDIA).
 
 Problemas conhecidos:
-- DullRazor (P2) apaga glóbulos escuros dentro da lesão; aceitar só estruturas finas e
-  alongadas como pelo.
 - Limiarização adaptativa (S2/S4) fragmenta lesões grandes.

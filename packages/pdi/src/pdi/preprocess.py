@@ -8,6 +8,7 @@ from dataclasses import dataclass
 
 import cv2
 import numpy as np
+from skimage.morphology import skeletonize
 
 # P0 — normalização da entrada
 INPUT_SIZE = 300  # lado (px) das imagens da base; os kernels abaixo foram dimensionados para ele
@@ -29,8 +30,23 @@ VIGNETTE_MARGIN = 7  # dilatação final (px, elipse) da máscara, margem de seg
 
 # P2 — pelos (DullRazor)
 HAIR_KERNEL_SIZE = 9  # elemento estruturante do black-hat (imagens de 300 px)
-HAIR_THRESHOLD = 12  # resposta mínima do black-hat para um pixel ser pelo
 HAIR_INPAINT_RADIUS = 3
+# Correção do P2: com limiar 12 e sem filtro de forma, o DullRazor marcava como pelo 41% dos
+# pixels da lesão (texturas e glóbulos escuros). Duas constantes, calibradas em
+# training.calibrate_p2 (150 imagens de treino + 150 de validação, pelos sintéticos de
+# pdi.artifacts; regra do teste intocado):
+# - HAIR_THRESHOLD: resposta mínima do black-hat para um pixel ser pelo;
+# - HAIR_MIN_ELONGATION: só componentes finos e alongados são pelo, com alongamento =
+#   comprimento² / área (comprimento = pixels do esqueleto) = comprimento ÷ largura média.
+# Resultado (treino; validação entre parênteses), PSNR da restauração / cobertura dos pelos
+# sintéticos / fração da lesão apagada sem pelo sintético:
+#   12, 0 (original) → 32,1 dB / 99,8% / 41,4%  (33,2 / 99,8% / 38,6%)
+#   40, 0 (maior PSNR) → 35,6 dB / 96,7% / 5,0%  (37,1 / 95,7% / 3,1%)
+#   40, 4 (escolhido)  → 35,0 dB / 94,8% / 2,6%  (36,6 / 93,8% / 1,6%)
+# O filtro de alongamento custa 0,5 dB e reduz à metade o que é apagado dentro da lesão,
+# que é o defeito a corrigir; limiares maiores perdem pelos claros (50, 0: 91% na validação).
+HAIR_THRESHOLD = 40
+HAIR_MIN_ELONGATION = 4.0
 
 # P3 — Shades of Gray
 SHADES_OF_GRAY_P = 6
@@ -118,7 +134,21 @@ def hair_mask(image: np.ndarray, roi: np.ndarray) -> np.ndarray:
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (HAIR_KERNEL_SIZE, HAIR_KERNEL_SIZE))
     blackhat = cv2.morphologyEx(_gray(image), cv2.MORPH_BLACKHAT, kernel)
     mask = (blackhat > HAIR_THRESHOLD) & roi
+    mask = keep_elongated(mask, HAIR_MIN_ELONGATION)
     return cv2.dilate(mask.astype(np.uint8), np.ones((3, 3), np.uint8)).astype(bool)
+
+
+def keep_elongated(mask: np.ndarray, min_elongation: float) -> np.ndarray:
+    """Mantém só os componentes conexos com comprimento² / área ≥ `min_elongation`."""
+    if min_elongation <= 0 or not mask.any():
+        return mask
+    n, labels = cv2.connectedComponents(mask.astype(np.uint8), connectivity=8)
+    area = np.bincount(labels.ravel(), minlength=n)
+    length = np.bincount(labels[skeletonize(mask)], minlength=n)
+    elongation = length.astype(np.float64) ** 2 / np.maximum(area, 1)
+    keep = elongation >= min_elongation
+    keep[0] = False
+    return keep[labels]
 
 
 def remove_hair(image: np.ndarray, roi: np.ndarray) -> tuple[np.ndarray, np.ndarray]:

@@ -218,7 +218,7 @@ def _color(image: np.ndarray, lab: np.ndarray, mask: np.ndarray, roi: np.ndarray
     # HSV com H em graus [0, 360) e S, V em [0, 1]; H é circular (média e dp circulares)
     hsv = cv2.cvtColor(image.astype(np.float32) / 255.0, cv2.COLOR_RGB2HSV)[mask]
     hue = np.deg2rad(hsv[:, 0])
-    resultant = np.hypot(np.sin(hue).mean(), np.cos(hue).mean())
+    resultant = min(float(np.hypot(np.sin(hue).mean(), np.cos(hue).mean())), 1.0)
     out["H_media"] = np.rad2deg(np.arctan2(np.sin(hue).mean(), np.cos(hue).mean())) % 360
     out["H_dp"] = np.rad2deg(np.sqrt(-2 * np.log(max(resultant, 1e-12))))
     for i, name in ((1, "S"), (2, "V")):
