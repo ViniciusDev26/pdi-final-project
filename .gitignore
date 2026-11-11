@@ -27,6 +27,16 @@ runs/
 .idea/
 .vscode/
 
-# Saídas dos experimentos (reproduzíveis; vão no pacote do release)
+# Saídas dos experimentos: versionadas por cenário (métricas, predições e modelo, este no
+# Git LFS); cache do pipeline, fila, estado e log ficam fora
 results/*
 !results/.gitkeep
+!results/[A-Z][0-9]/
+results/[A-Z][0-9]/*
+!results/[A-Z][0-9]/metrics.json
+!results/[A-Z][0-9]/predictions.csv
+!results/[A-Z][0-9]/history.csv
+!results/[A-Z][0-9]/gradcam.csv
+!results/[A-Z][0-9]/resumo.json
+!results/[A-Z][0-9]/model.joblib
+!results/[A-Z][0-9]/model.pt

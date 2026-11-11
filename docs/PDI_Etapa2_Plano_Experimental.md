@@ -437,8 +437,8 @@ apps/web/src/web/
   app.py            roteador (st.navigation)
   views/            Triagem, Simulador, Experimentos, Resultados, Base de dados, Anotação
 experiments/        listas fixas de IDs e máscaras anotadas (versionados)
-results/            saídas dos experimentos (fora do git, reproduzíveis)
-models/             modelos treinados (fora do git, distribuídos no pacote da seção 7.3)
+results/            saídas oficiais por cenário, versionadas: metrics.json, predições e modelo (Git LFS)
+models/             modelos exportados (fora do git)
 ```
 
 Atalhos de terminal para a equipe (opcionais; chamam as mesmas funções que a API):
@@ -459,11 +459,10 @@ modos de execução.
 - **Modo completo (para reproduzir):** com o dataset (`just data-download`) e, de
   preferência, GPU NVIDIA; a página Experimentos refaz todos os cenários.
 - **O que é entregue:**
-  - código: tag `etapa2-entrega` no GitHub; no AVA, o link e/ou um zip do repositório
-    nessa tag, **sem** `data/`, `models/` e `results/` (formato a confirmar — ver
-    pendências no topo);
-  - pacote de modelos e resultados: arquivo anexado ao release `etapa2-entrega` do GitHub
-    (`modelos-e-resultados.zip`), baixado pelo README ou carregado pela página Resultados;
+  - código, modelos e resultados: tag `etapa2-entrega` no GitHub; os modelos treinados e
+    os resultados oficiais ficam versionados em `results/<ID>/` (modelos no Git LFS);
+    no AVA, o link e/ou um zip do repositório nessa tag com os arquivos do LFS já
+    baixados, **sem** `data/` (formato a confirmar — ver pendências no topo);
   - material da apresentação: slides em PDF.
 - **README** com, no topo, a seção "Como avaliar em 3 comandos" (modo leitura), depois a
   reprodução completa e o mapa do repositório.
@@ -585,3 +584,7 @@ prazo for conhecido.
 | 2026-11-10 | Correção do P2: limiar do black-hat 12 → 40 e filtro de alongamento ≥ 4, calibrados com pelos sintéticos em 150 imagens de treino e 150 de validação | O DullRazor apagava 41% dos pixels da lesão; agora 2,6%, com 0,5 dB a menos de PSNR que o melhor candidato sem filtro |
 | 2026-11-10 | A lista fechada de características (3.1) resulta em 38 valores, não "cerca de 45" | Contagem exata da implementação; nenhuma característica incluída ou removida |
 | 2026-11-10 | Listas de `experiments/` geradas (`training.experiment_lists`, semente 42); o teste tem só 4 benignas com vinheta, então a lista de anotação do teste tem 4 (não 15) benignas com vinheta e 15 malignas com vinheta; máscaras guardadas por anotador (`mascaras/<conjunto>/<anotador>/`) | A base não tem benignas com vinheta suficientes no teste; guardar por anotador permite o Dice entre anotadores nas 10 compartilhadas |
+| 2026-11-10 | Modelos treinados e resultados oficiais versionados no repositório (`results/<ID>/`: `metrics.json`, predições, histórico e modelo); modelos (`*.joblib` comprimidos, `*.pt`) no Git LFS, em vez do pacote anexado ao release (seção 7.3) | Decisão da equipe: o treino fica no repositório; 305 MB de modelos, por isso o LFS |
+| 2026-11-10 | Primeira execução oficial (desktop, Docker com GPU, commit `6ee6538`): 27 de 32 cenários concluídos; S1–S4 e V4 aguardam as máscaras anotadas | — |
+| 2026-11-10 | **Modelo da Triagem: C6** (CNN na imagem bruta), maior AUC na validação entre os cenários C (0,989; C7: 0,985; C1: 0,946), com limiar 0,933 escolhido na validação (regra da seção 2) | Escolha registrada conforme a seção 2 |
+| 2026-11-10 | **Ablação: P1 e P3 pioram o Random Forest de referência de forma significativa** nas duas leituras (P1: −0,007 [−0,014; −0,001] incremental e −0,011 [−0,019; −0,005] na remoção; P3: −0,010 [−0,018; −0,004] e −0,011 [−0,020; −0,003]). Pela seção 5.3, os cenários C continuam com A5 até a equipe decidir e justificar; nenhum cenário foi alterado | P1 remove a vinheta, que é um atalho na base (V1: AUC 0,70 só com o indicador de vinheta; 41,6% das malignas do teste têm vinheta); a perda de AUC é esperada se o modelo deixa de usar o atalho. P3 precisa de análise |

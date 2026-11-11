@@ -160,7 +160,7 @@ def _fit_traditional(
     t0 = time.perf_counter()
     fit = traditional.fit(sc.model, X[train], splits["y"].to_numpy()[train])
     progress(0.8, f"modelo ajustado em {time.perf_counter() - t0:.0f} s; avaliando")
-    joblib.dump(fit.model, out / "model.joblib")
+    joblib.dump(fit.model, out / "model.joblib", compress=3)
     pred = splits[["path", "split", "y", "vinheta"]].assign(
         p=traditional.predict_proba(fit.model, X)
     )
@@ -231,7 +231,7 @@ def run_vignette_shortcut(sc: Scenario, out, progress: Progress) -> dict:
     X = splits[["vinheta"]].astype(float).to_numpy()
     train = (splits["split"] == "train").to_numpy()
     model = LogisticRegression().fit(X[train], splits["y"][train])
-    joblib.dump(model, out / "model.joblib")
+    joblib.dump(model, out / "model.joblib", compress=3)
     pred = splits[["path", "split", "y", "vinheta"]].assign(p=model.predict_proba(X)[:, 1])
     pred = pred[pred["split"] != "train"]
     pred.to_csv(out / "predictions.csv", index=False)

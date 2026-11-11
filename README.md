@@ -26,7 +26,7 @@ packages/
 infra/        Dockerfile, docker-compose (CPU) e override com GPU
 experiments/  listas fixas de IDs e máscaras anotadas (versionadas)
 data/         dataset e splits locais (fora do git)
-results/      saídas dos cenários: métricas, predições, modelos e logs (fora do git)
+results/      resultados oficiais por cenário: métricas, predições e modelos (Git LFS)
 models/       modelos exportados (fora do git)
 docs/         documentos das etapas e plano experimental
 ```
@@ -37,7 +37,12 @@ treino e a API usam exatamente o mesmo pré-processamento.
 
 ## Setup
 
-Pré-requisito: [mise](https://mise.jdx.dev) instalado e ativado no shell.
+Pré-requisitos: [mise](https://mise.jdx.dev) instalado e ativado no shell e
+[Git LFS](https://git-lfs.com) (os modelos treinados ficam no LFS):
+
+```sh
+git lfs install     # uma vez por máquina, antes do clone (ou `git lfs pull` depois)
+```
 
 ```sh
 mise install        # instala Python 3.12, uv e just nas versões do mise.toml
@@ -91,6 +96,23 @@ API os coloca numa fila e roda um por vez num processo separado, gravando em
 modelo e o log. A página **Resultados** consolida tudo (impacto por etapa, ROC, viés,
 figuras para os slides). Cenários S e V4 dependem das máscaras desenhadas na página
 **Anotação**.
+
+### Resultados oficiais
+
+Ficam versionados em `results/<ID>/` (commit de execução `6ee6538`, desktop com RTX 4060
+Ti via Docker): `metrics.json` com as métricas e IC 95%, `predictions.csv`, `history.csv`
+(CNN) e o modelo treinado (`model.joblib` ou `model.pt`, no Git LFS). AUC no teste:
+
+| Cenário | Modelo | AUC (IC 95%) |
+|---|---|---|
+| C7 | CNN, imagem pré-processada | 0,977 (0,969–0,985) |
+| C6 | CNN, imagem bruta | 0,976 (0,968–0,984) |
+| C1 | características F + SVM | 0,949 (0,936–0,960) |
+| C2 | características F + Random Forest | 0,945 (0,931–0,956) |
+
+O modelo da Triagem, pela regra do plano (maior AUC na validação), é o **C6**. A página
+**Resultados** mostra todos os cenários, o impacto por etapa e a análise de viés. S1–S4 e
+V4 aguardam as máscaras anotadas.
 
 **Números oficiais só do servidor de experimentos** (Linux, RTX 4060 Ti), via
 `just up-gpu`. A GPU é repassada ao contêiner por CDI (`nvidia-ctk cdi generate`). Em
