@@ -1,44 +1,97 @@
-"""Página Triagem: fluxo do profissional da Atenção Primária."""
+"""Página Triagem: fluxo do profissional da Atenção Primária (plano, seção 7.1).
+
+Mostra a probabilidade do modelo escolhido pela regra da seção 2 (cenário C com maior AUC
+na validação), o Grad-CAM (onde a CNN olhou), a lesão segmentada e os indicadores ABCD do
+pipeline tradicional, com a recomendação e o aviso de que não substitui o diagnóstico.
+"""
 
 import httpx
+import pandas as pd
 import streamlit as st
 
-from web.common import api_error_message, get_client
+from web.common import api_error_message, b64_image, get_client
 
-LABELS = {
-    "malignant": ("Suspeita de melanoma", "Recomenda-se encaminhar ao dermatologista."),
-    "benign": ("Sem sinais de malignidade", "Manter acompanhamento de rotina."),
+TITLES = {
+    "malignant": ("Suspeita de melanoma", st.error),
+    "benign": ("Sem sinais de malignidade", st.success),
+}
+ABCD = {  # característica → (critério, descrição curta)
+    "assimetria_eixo_maior": ("A", "Assimetria no eixo maior (0 = simétrica)"),
+    "assimetria_eixo_menor": ("A", "Assimetria no eixo menor (0 = simétrica)"),
+    "compacidade": ("B", "Compacidade da borda (1 = círculo; maior = mais irregular)"),
+    "variacao_raio": ("B", "Variação do raio ao longo da borda"),
+    "n_cores": ("C", "Número de cores dermatoscópicas presentes (de 6)"),
+    "delta_e_pele": ("C", "Contraste de cor com a pele (ΔE)"),
+    "diametro_max_px": ("D", "Diâmetro máximo (pixels; sem escala física)"),
+    "area_relativa": ("D", "Área da lesão / área da imagem"),
 }
 
 client = get_client()
 
 st.title("Triagem de lesões de pele")
 st.caption(
-    "Protótipo acadêmico de apoio à triagem. **Não substitui o diagnóstico médico nem a biópsia.**"
+    "Protótipo acadêmico de apoio à triagem. **Não substitui o diagnóstico médico nem a "
+    "biópsia.** Use imagens dermatoscópicas; fotos comuns de celular não são suportadas."
 )
 
 uploaded = st.file_uploader("Imagem dermatoscópica da lesão", type=["jpg", "jpeg", "png"])
 if uploaded is None:
     st.stop()
 
-col_img, col_result = st.columns(2)
-col_img.image(uploaded, caption=uploaded.name, width="stretch")
-
-with col_result, st.spinner("Analisando..."):
+with st.spinner("Analisando..."):
     try:
         result = client.predict(uploaded.getvalue(), uploaded.name, uploaded.type)
     except httpx.HTTPError as exc:
         st.error(api_error_message(exc))
         st.stop()
 
-    title, advice = LABELS[result["label"]]
-    prob = result["probability_malignant"]
-    (st.error if result["label"] == "malignant" else st.success)(f"**{title}**")
-    st.metric("Probabilidade de malignidade", f"{prob:.1%}")
-    st.progress(prob)
-    st.write(advice)
+title, box = TITLES[result["label"]]
+prob = result["probability_malignant"]
+
+col_img, col_result = st.columns([3, 2])
+with col_result:
+    box(f"**{title}**")
+    st.metric("Probabilidade de melanoma", f"{prob:.1%}")
+    st.progress(min(max(prob, 0.0), 1.0))
+    st.markdown(f"**Recomendação:** {result['recommendation']}.")
     st.caption(
-        f"Modelo {result['model']} v{result['model_version']} · limiar {result['threshold']:.2f}"
+        f"Modelo {result['model']} ({result['model_description']}) · versão "
+        f"{result['model_version']} · limiar {result['threshold']:.3f}, escolhido na validação "
+        "para sensibilidade ≥ 90%."
     )
     if result["model"] == "dummy":
         st.warning("Modelo de demonstração: o resultado não tem valor diagnóstico.")
+    if result["vignette_detected"]:
+        st.info(
+            "A imagem tem vinheta (borda escura do dermatoscópio). Na base de treino a vinheta "
+            "aparece muito mais em melanomas; interprete o resultado com cautela."
+        )
+
+with col_img:
+    panels = [("Imagem (após normalização)", result["image"])]
+    if result["lesion_overlay"]:
+        panels.append(("Lesão segmentada (pipeline tradicional)", result["lesion_overlay"]))
+    if result["gradcam"]:
+        panels.append(("Grad-CAM: regiões que mais pesaram", result["gradcam"]))
+    for col, (caption, image) in zip(st.columns(len(panels)), panels, strict=True):
+        col.image(b64_image(image), caption=caption, width="stretch")
+
+st.subheader("Indicadores ABCD")
+abcd = result["abcd"]
+if all(v is None for v in abcd.values()):
+    st.warning("Não foi possível segmentar a lesão; os indicadores ABCD não foram calculados.")
+else:
+    st.dataframe(
+        pd.DataFrame(
+            [
+                {"Critério": crit, "Indicador": desc, "Valor": abcd.get(key)}
+                for key, (crit, desc) in ABCD.items()
+            ]
+        ).style.format({"Valor": "{:.3f}"}, na_rep="—"),
+        hide_index=True,
+        width="stretch",
+    )
+    st.caption(
+        "Indicadores calculados na lesão segmentada pelo pipeline de PDI tradicional; servem "
+        "para explicar a imagem e não entram na probabilidade da CNN."
+    )

@@ -1,14 +1,14 @@
 """Rotas das páginas Experimentos e Resultados (plano experimental, seção 7.1)."""
 
 import json
-from typing import Any
+from typing import Annotated, Any
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Form, HTTPException
 from fastapi.responses import PlainTextResponse, Response
 from pydantic import BaseModel
 
 from api.jobs import JobQueue
-from training import evaluation, report, status
+from training import evaluation, report, status, visuals
 from training.scenarios import SCENARIOS
 
 router = APIRouter(tags=["experimentos"])
@@ -91,6 +91,49 @@ def figure(name: str) -> Response:
         return Response(report.figure(name), media_type="image/png")
     except KeyError as exc:
         raise HTTPException(status_code=404, detail=f"figura desconhecida: {name}") from exc
+
+
+@router.get("/results/visuals")
+def visuals_index() -> dict[str, Any]:
+    """Saídas visuais da seção 5.6 já geradas, com as anotações de causa dos erros."""
+    return {
+        "index": visuals.load_index(),
+        "notas": visuals.load_notes(),
+        "causas": list(visuals.ERROR_CAUSES),
+    }
+
+
+@router.post("/results/visuals")
+def visuals_generate() -> dict[str, Any]:
+    """Gera de novo as saídas visuais (precisa do dataset; leva cerca de 1 minuto)."""
+    try:
+        return {"index": visuals.generate()}
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+
+@router.get("/results/visuals/{name:path}")
+def visuals_file(name: str) -> Response:
+    base = visuals.out_dir().resolve()
+    path = (base / name).resolve()
+    if path.suffix != ".png" or base not in path.parents or not path.exists():
+        raise HTTPException(status_code=404, detail=f"figura não encontrada: {name}")
+    return Response(path.read_bytes(), media_type="image/png")
+
+
+@router.put("/results/errors")
+def error_note(
+    path: Annotated[str, Form()], causa: Annotated[str, Form()], nota: Annotated[str, Form()] = ""
+) -> dict[str, Any]:
+    """Anotação da equipe sobre a causa provável de um erro do modelo (seção 5.6)."""
+    index = visuals.load_index() or {}
+    known = {c["path"] for c in index.get("erros", {}).get("casos", [])}
+    if path not in known:
+        raise HTTPException(status_code=404, detail="imagem fora da análise de erros")
+    try:
+        return visuals.save_error_note(path, causa, nota)
+    except ValueError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
 
 def _scenario(sid: str) -> None:

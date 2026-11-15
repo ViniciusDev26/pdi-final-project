@@ -66,3 +66,27 @@ def grid(rows: list[list[np.ndarray]], gap: int = 6) -> np.ndarray:
             y, x = i * (th + gap), j * (tw + gap)
             out[y : y + th, x : x + tw] = tile
     return out
+
+
+def overlay_heatmap(image: np.ndarray, heatmap: np.ndarray, alpha: float = 0.45) -> np.ndarray:
+    """Sobrepõe um mapa em [0, 1] (ex.: Grad-CAM) à imagem RGB, em escala de cor JET."""
+    h, w = image.shape[:2]
+    if heatmap.shape[:2] != (h, w):
+        heatmap = cv2.resize(heatmap.astype(np.float32), (w, h), interpolation=cv2.INTER_LINEAR)
+    colored = cv2.applyColorMap(np.uint8(np.clip(heatmap, 0, 1) * 255), cv2.COLORMAP_JET)
+    colored = cv2.cvtColor(colored, cv2.COLOR_BGR2RGB)
+    return cv2.addWeighted(image, 1 - alpha, colored, alpha, 0)
+
+
+def overlay_two_contours(
+    image: np.ndarray, auto: np.ndarray | None, manual: np.ndarray | None
+) -> np.ndarray:
+    """Contorno automático em vermelho e manual (referência) em verde."""
+    out = image.copy()
+    for mask, color in ((manual, (0, 255, 0)), (auto, (255, 0, 0))):
+        if mask is not None and mask.any():
+            contours, _ = cv2.findContours(
+                mask.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE
+            )
+            cv2.drawContours(out, contours, -1, color, 2)
+    return out

@@ -1,11 +1,34 @@
 from io import BytesIO
 
+import pytest
 from fastapi.testclient import TestClient
 from PIL import Image
 
+from api import predictor
 from api.main import app
+from training import config as cfg
 
 client = TestClient(app)
+REPO_RESULTS = cfg.RESULTS_DIR
+
+
+def _has_model(sid: str) -> bool:
+    path = REPO_RESULTS / sid / "model.pt"
+    return path.exists() and path.stat().st_size > 1_000_000  # não é ponteiro do LFS
+
+
+@pytest.fixture(autouse=True)
+def _no_models(tmp_path, monkeypatch):
+    """Sem modelos treinados por padrão: Triagem com o dummy e Simulador sem probabilidade."""
+    monkeypatch.setattr(cfg, "RESULTS_DIR", tmp_path)
+    predictor.triage_predictor.cache_clear()
+    yield
+    predictor.triage_predictor.cache_clear()
+
+
+def _use_repo_results(monkeypatch):
+    monkeypatch.setattr(cfg, "RESULTS_DIR", REPO_RESULTS)
+    predictor.triage_predictor.cache_clear()
 
 
 def _jpeg(color: tuple[int, int, int]) -> bytes:
@@ -24,6 +47,24 @@ def test_predict_returns_label_and_probability():
     body = resp.json()
     assert body["label"] == "malignant"
     assert 0.0 <= body["probability_malignant"] <= 1.0
+    assert body["model"] == "dummy" and body["gradcam"] is None
+    assert body["recommendation"] == "Encaminhar ao dermatologista"
+
+
+def test_predict_returns_abcd_and_segmentation():
+    body = client.post("/predict", files=_file()).json()
+    assert body["lesion_overlay"] and body["image"]
+    assert body["abcd"]["n_cores"] >= 1
+    assert body["abcd"]["assimetria_eixo_maior"] < 0.1
+
+
+@pytest.mark.skipif(not _has_model("C6"), reason="modelos do Git LFS ausentes")
+def test_predict_uses_triage_model_with_gradcam(monkeypatch):
+    _use_repo_results(monkeypatch)
+    assert client.get("/health").json()["model"] == "C6"
+    body = client.post("/predict", files=_file()).json()
+    assert body["model"] == "C6" and body["gradcam"]
+    assert body["threshold"] == pytest.approx(0.933, abs=1e-3)
 
 
 def test_predict_rejects_non_image():
@@ -91,9 +132,9 @@ def test_pipeline_defaults_to_full_config():
 
 
 def test_pipeline_rejects_invalid_config():
-    for cfg in ('{"contrast": "sharpen"}', '{"P9": 1}', "nao-json", "[1]"):
-        resp = client.post("/pipeline", files=_file(), data={"config": cfg})
-        assert resp.status_code == 422, cfg
+    for raw in ('{"contrast": "sharpen"}', '{"P9": 1}', "nao-json", "[1]"):
+        resp = client.post("/pipeline", files=_file(), data={"config": raw})
+        assert resp.status_code == 422, raw
 
 
 def test_compare_returns_dice_matrix_and_figure():
@@ -108,6 +149,22 @@ def test_compare_returns_dice_matrix_and_figure():
     assert body["mask_dice"][0][0] == 1.0
     assert 0.8 < body["mask_dice"][0][1] <= 1.0
     assert body["figure"]
+    assert all(c["models"] == [] for c in body["combinations"])  # sem modelos treinados
+
+
+@pytest.mark.skipif(not _has_model("C6"), reason="modelos do Git LFS ausentes")
+def test_compare_shows_probability_only_for_trained_pipelines(monkeypatch):
+    _use_repo_results(monkeypatch)
+    combos = (
+        '[{"label": "A0", "config": {"vignette": null, "hair": null, "color": null,'
+        ' "contrast": null, "denoise": null}}, {"label": "livre", "config": {"denoise": null,'
+        ' "contrast": "equalize"}}]'
+    )
+    body = client.post("/compare", files=_file(), data={"combinations": combos}).json()
+    a0, livre = body["combinations"]
+    assert {m["id"] for m in a0["models"]} == {"A0", "C6"}
+    assert all(0 <= m["probability_malignant"] <= 1 for m in a0["models"])
+    assert livre["models"] == []
 
 
 def test_compare_limits_number_of_combinations():

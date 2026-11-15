@@ -4,6 +4,8 @@ Plano experimental, seção 6.2. Cada combinação escolhe a técnica de cada et
 desliga), partindo de um cenário congelado como preset ou montada livremente.
 """
 
+from dataclasses import dataclass
+
 import httpx
 import pandas as pd
 import streamlit as st
@@ -94,7 +96,28 @@ def _preset_label(pid: str) -> str:
 
 # ---------------------------------------------------------------- entrada
 
+
+@dataclass(frozen=True)
+class BaseImage:
+    """Imagem enviada pela página Base de dados (mesma interface do arquivo do uploader)."""
+
+    name: str
+    data: bytes
+    type: str = "image/jpeg"
+
+    @property
+    def file_id(self) -> str:
+        return f"base:{self.name}"
+
+    def getvalue(self) -> bytes:
+        return self.data
+
+
 uploaded = st.file_uploader("Imagem dermatoscópica", type=["jpg", "jpeg", "png"])
+if uploaded is None and "sim_base_image" in st.session_state:
+    base = st.session_state["sim_base_image"]
+    uploaded = BaseImage(base["name"], base["data"])
+    st.caption(f"Imagem da base: `{base['path']}` (escolhida na página Base de dados)")
 
 n = st.segmented_control(
     "Número de combinações",
@@ -196,6 +219,28 @@ with tab_final:
             h, w = r["original_shape"][:2]
             if (h, w) != (300, 300):
                 st.caption(f"Entrada {w} × {h} normalizada para 300 × 300 (P0)")
+            if combo["models"]:
+                st.markdown("**Probabilidade de melanoma**")
+                st.dataframe(
+                    pd.DataFrame(
+                        [
+                            {
+                                "Modelo": f"{m['id']} · {m['description']}",
+                                "Prob.": m["probability_malignant"],
+                                "Limiar": m["threshold"],
+                                "Resultado": "maligna" if m["label"] == "malignant" else "benigna",
+                            }
+                            for m in combo["models"]
+                        ]
+                    ).style.format({"Prob.": "{:.1%}", "Limiar": "{:.3f}"}),
+                    hide_index=True,
+                    width="stretch",
+                )
+            else:
+                st.caption(
+                    "Sem probabilidade: nenhum modelo foi treinado com exatamente esta "
+                    "combinação de técnicas (seção 6.2 do plano)."
+                )
 
 with tab_steps:
     # uma linha por combinação, uma coluna por etapa (mesmo formato da figura para slides)

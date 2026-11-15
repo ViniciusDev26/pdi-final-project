@@ -68,6 +68,7 @@ tabs = st.tabs(
         "Segmentação",
         "Viés",
         "Métricas locais",
+        "Saídas visuais",
         "Figuras",
     ]
 )
@@ -99,8 +100,9 @@ with tabs[0]:
         )
     overview = pd.DataFrame(rows)
     only_done = st.toggle("Só cenários executados", value=True, key="res_only_done")
-    if only_done:
-        overview = overview[overview["AUC"] != "—"]
+    if only_done and not overview.empty:
+        done_mask = (overview["AUC"] != "—") | (overview["Dice (teste)"] != "—")
+        overview = overview[done_mask]
     st.dataframe(overview, hide_index=True, width="stretch")
     download(overview, f"cenarios_{prefix or 'completo'}")
     if report["triagem"]:
@@ -155,7 +157,7 @@ with tabs[1]:
         st.altair_chart(
             base.mark_bar().encode(y="ΔAUC:Q", color="leitura:N")
             + base.mark_errorbar().encode(y="inf:Q", y2="sup:Q"),
-            use_container_width=True,
+            width="stretch",
         )
 
 # ---------------------------------------------------------------- técnicas
@@ -221,7 +223,7 @@ with tabs[3]:
             .mark_line()
             .encode(x="1 − especificidade:Q", y="sensibilidade:Q", color="modelo:N")
             .properties(height=420, title="Curvas ROC (teste)"),
-            use_container_width=True,
+            width="stretch",
         )
         cols = st.columns(min(len(models), 4))
         for i, m in enumerate(models):
@@ -297,7 +299,27 @@ with tabs[5]:
         st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
     if "V4" in vies:
         st.markdown("**V4 · onde a CNN olha (Grad-CAM)**")
-        st.json(vies["V4"].get("modelos", {}), expanded=False)
+        v4 = {k: v for k, v in vies["V4"].get("modelos", {}).items() if not v.get("pendente")}
+        st.dataframe(
+            pd.DataFrame(
+                [
+                    {
+                        "Modelo": sid,
+                        "Fração do Grad-CAM dentro da lesão": fmt_ci(
+                            d["fracao_ativacao_na_lesao"], d["ic95"]
+                        ),
+                        "Área média da lesão": f"{d['area_media_lesao']:.1%}",
+                    }
+                    for sid, d in v4.items()
+                ]
+            ),
+            hide_index=True,
+            width="stretch",
+        )
+        st.caption(
+            "Se o modelo olhasse ao acaso, a fração dentro da lesão seria igual à área da "
+            f"lesão. Máscaras de referência: {vies['V4'].get('n', '—')} imagens do teste."
+        )
     if "V5" in vies:
         st.markdown("**V5 · vinheta artificial em benignas**")
         rows = [
@@ -340,8 +362,127 @@ with tabs[6]:
             width="stretch",
         )
 
-# ---------------------------------------------------------------- figuras
+# ---------------------------------------------------------------- saídas visuais (5.6)
 with tabs[7]:
+    try:
+        vis = client.visuals()
+    except httpx.HTTPError as exc:
+        st.error(api_error_message(exc))
+        vis = {"index": None, "notas": {}, "causas": []}
+    index = vis["index"]
+    top = st.columns([3, 1])
+    top[0].caption(
+        "Saídas visuais da seção 5.6 que dependem das imagens: segmentação (melhores e piores "
+        "casos), análise qualitativa de erros e grades do simulador. Ficam salvas em "
+        "`results/visuais/`, então aparecem também no modo leitura, sem o dataset."
+        + (f" Geradas em {index['gerado_em'][:10]} (commit {index['commit']})." if index else "")
+    )
+    if top[1].button("Gerar de novo", icon=":material/refresh:", help="Precisa do dataset"):
+        with st.spinner("Gerando (cerca de 1 minuto)..."):
+            try:
+                client.generate_visuals()
+                st.rerun()
+            except httpx.HTTPError as exc:
+                st.error(api_error_message(exc))
+    if not index:
+        st.info("Saídas visuais ainda não geradas.")
+    else:
+        sub = st.segmented_control(
+            "Saída",
+            ["Segmentação", "Análise de erros", "Grades do simulador"],
+            default="Análise de erros",
+            key="res_vis_sub",
+        )
+
+        def show(name: str, caption: str) -> None:
+            png = client.visual(name)
+            st.image(png, caption=caption, width="stretch")
+            st.download_button(
+                "Baixar (PNG)",
+                png,
+                file_name=name.replace("/", "_"),
+                mime="image/png",
+                key=f"dl_vis_{name}",
+                icon=":material/download:",
+            )
+
+        if sub == "Segmentação":
+            seg_vis = index["segmentacao"]
+            if seg_vis.get("pendente"):
+                st.info(seg_vis["pendente"])
+            else:
+                st.caption(
+                    f"Segmentação {seg_vis['cenario']} (vermelho) × máscara de referência (verde)."
+                )
+                show(seg_vis["figuras"]["segmentacao_melhores"], "Maiores Dice do teste")
+                show(seg_vis["figuras"]["segmentacao_piores"], "Menores Dice do teste")
+        elif sub == "Análise de erros":
+            err = index["erros"]
+            if err.get("pendente"):
+                st.info(err["pendente"])
+            else:
+                notes = vis["notas"]
+                cases = err["casos"]
+                done = sum(c["path"] in notes for c in cases)
+                st.write(
+                    f"Falsos negativos e falsos positivos de maior confiança do modelo da "
+                    f"Triagem ({err['modelo']}) no teste. Anote a causa provável de cada erro: "
+                    f"{done} de {len(cases)} anotados."
+                )
+                summary_rows = [
+                    {
+                        "Imagem": c["imagem"],
+                        "Tipo": c["tipo"],
+                        "p": round(c["p"], 3),
+                        "Causa": notes.get(c["path"], {}).get("causa", ""),
+                        "Nota": notes.get(c["path"], {}).get("nota", ""),
+                    }
+                    for c in cases
+                ]
+                summary_df = pd.DataFrame(summary_rows)
+                st.dataframe(summary_df, hide_index=True, width="stretch")
+                download(summary_df, "analise_erros")
+                case = st.selectbox(
+                    "Caso",
+                    cases,
+                    format_func=lambda c: f"{c['tipo']} · {c['imagem']} · p = {c['p']:.3f}",
+                    key="res_err_case",
+                )
+                st.image(client.visual(case["figura"]), width="stretch")
+                note = notes.get(case["path"], {})
+                causes = vis["causas"]
+                with st.form(f"err_note_{case['path']}"):
+                    causa = st.selectbox(
+                        "Causa provável",
+                        causes,
+                        index=causes.index(note["causa"]) if note.get("causa") in causes else 0,
+                    )
+                    nota = st.text_input("Observação", value=note.get("nota", ""))
+                    if st.form_submit_button("Salvar anotação", icon=":material/save:"):
+                        try:
+                            client.save_error_note(case["path"], causa, nota)
+                            st.toast("Anotação salva")
+                            st.rerun()
+                        except httpx.HTTPError as exc:
+                            st.error(api_error_message(exc))
+                kinds = (("erros_fn", "Falsos negativos"), ("erros_fp", "Falsos positivos"))
+                for kind, title in kinds:
+                    if kind in err["figuras"]:
+                        with st.expander(f"{title}: figura para os slides"):
+                            show(err["figuras"][kind], title)
+        elif sub == "Grades do simulador":
+            ex = index["exemplos"]
+            st.caption(
+                "As 6 imagens de exemplo da validação (`experiments/exemplos_ids.csv`) em "
+                f"{' × '.join(ex['presets'])}: sem pré-processamento, completo, equalização "
+                "global no lugar do CLAHE e completo sem a P1."
+            )
+            names = list(ex["figuras"])
+            pick = st.selectbox("Exemplo", names, key="res_vis_ex")
+            show(ex["figuras"][pick], ex["imagens"][names.index(pick)])
+
+# ---------------------------------------------------------------- figuras
+with tabs[8]:
     try:
         figures = client.figures()
     except httpx.HTTPError as exc:

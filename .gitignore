@@ -40,3 +40,5 @@ results/[A-Z][0-9]/*
 !results/[A-Z][0-9]/resumo.json
 !results/[A-Z][0-9]/model.joblib
 !results/[A-Z][0-9]/model.pt
+# saídas visuais da seção 5.6 (servem o modo leitura, sem o dataset)
+!results/visuais/

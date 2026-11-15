@@ -78,8 +78,8 @@ class ApiClient:
 
     # ------------------------------------------------------------ experimentos e resultados
 
-    def _get(self, path: str, **params):
-        resp = self._http.get(path, params=params or None)
+    def _get(self, endpoint: str, **params):
+        resp = self._http.get(endpoint, params=params or None)
         resp.raise_for_status()
         return resp
 
@@ -113,3 +113,33 @@ class ApiClient:
 
     def figure(self, name: str) -> bytes:
         return self._get(f"/results/figures/{name}.png").content
+
+    # ------------------------------------------------------------ saídas visuais (seção 5.6)
+
+    def visuals(self) -> dict:
+        return self._get("/results/visuals").json()
+
+    def generate_visuals(self) -> dict:
+        resp = self._http.post("/results/visuals", timeout=600.0)
+        resp.raise_for_status()
+        return resp.json()
+
+    def visual(self, name: str) -> bytes:
+        return self._get(f"/results/visuals/{name}").content
+
+    def save_error_note(self, path: str, causa: str, nota: str) -> dict:
+        resp = self._http.put("/results/errors", data={"path": path, "causa": causa, "nota": nota})
+        resp.raise_for_status()
+        return resp.json()
+
+    # ------------------------------------------------------------ base de dados
+
+    def dataset_summary(self) -> dict:
+        return self._get("/dataset/summary").json()
+
+    def dataset_images(self, **filters) -> dict:
+        params = {k: v for k, v in filters.items() if v is not None}
+        return self._get("/dataset/images", **params).json()
+
+    def dataset_image(self, path: str) -> bytes:
+        return self._get("/dataset/image", path=path).content

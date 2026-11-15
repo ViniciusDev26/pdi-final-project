@@ -8,14 +8,40 @@ from fastapi import FastAPI, Form, HTTPException, UploadFile
 from PIL import UnidentifiedImageError
 from pydantic import BaseModel
 
-from api import annotations, experiments
+from api import annotations, dataset_routes, experiments
 from api.imaging import png_b64
-from api.predictor import DummyPredictor, Predictor
-from pdi import SEGMENTATION_METHODS, STAGES, PipelineConfig, PipelineResult, load_rgb, run
+from api.predictor import triage_predictor
+from pdi import (
+    SEGMENTATION_METHODS,
+    STAGES,
+    PipelineConfig,
+    PipelineResult,
+    load_rgb,
+    preprocess,
+    run,
+)
 from pdi import features as pdi_features
-from pdi.visualize import overlay_contour
+from pdi.visualize import overlay_contour, overlay_heatmap
+from training import inference
 from training.compare import MAX_COMBINATIONS, Combination, compare, figure
+from training.scenarios import SCENARIOS
 from training.scenarios import presets as scenario_presets
+
+# indicadores ABCD mostrados na Triagem (subconjunto das características F, seção 3.1)
+ABCD_FEATURES = (
+    "assimetria_eixo_maior",
+    "assimetria_eixo_menor",
+    "compacidade",
+    "variacao_raio",
+    "n_cores",
+    "delta_e_pele",
+    "diametro_max_px",
+    "area_relativa",
+)
+RECOMMENDATIONS = {
+    "malignant": "Encaminhar ao dermatologista",
+    "benign": "Manter acompanhamento de rotina",
+}
 
 
 @asynccontextmanager
@@ -24,10 +50,10 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="PDI Melanoma API", version="0.3.0", lifespan=lifespan)
-predictor: Predictor = DummyPredictor()
+app = FastAPI(title="PDI Melanoma API", version="0.4.0", lifespan=lifespan)
 app.include_router(annotations.router)
 app.include_router(experiments.router)
+app.include_router(dataset_routes.router)
 
 
 # ---------------------------------------------------------------- esquemas
@@ -39,6 +65,13 @@ class PredictResponse(BaseModel):
     threshold: float
     model: str
     model_version: str
+    model_description: str
+    recommendation: str
+    image: str  # imagem após P0 (300 × 300)
+    gradcam: str | None  # Grad-CAM sobreposto (só modelos CNN)
+    lesion_overlay: str | None  # contorno da segmentação do pipeline tradicional (A5)
+    vignette_detected: bool
+    abcd: dict[str, float | None]  # indicadores ABCD do pipeline tradicional (A5)
 
 
 class TechniqueOut(BaseModel):
@@ -95,9 +128,21 @@ class PipelineOut(BaseModel):
     features: dict[str, float | None]  # etapa F; None quando não há lesão segmentada
 
 
+class ModelProbabilityOut(BaseModel):
+    id: str
+    description: str
+    kind: str  # tradicional ou cnn
+    probability_malignant: float
+    threshold: float
+    label: str
+    auc_test: float | None
+
+
 class CombinationOut(BaseModel):
     label: str
     result: PipelineOut
+    # modelos treinados exatamente sobre o pipeline desta combinação (seção 6.2)
+    models: list[ModelProbabilityOut]
 
 
 class CompareOut(BaseModel):
@@ -132,6 +177,10 @@ def _parse_json(raw: str, what: str) -> Any:
         raise HTTPException(status_code=422, detail=f"{what}: JSON inválido") from exc
 
 
+def _clean(feats: dict) -> dict[str, float | None]:
+    return {k: None if math.isnan(v) else float(v) for k, v in feats.items()}
+
+
 def _pipeline_out(result: PipelineResult) -> PipelineOut:
     mask = result.lesion_mask
     return PipelineOut(
@@ -157,11 +206,31 @@ def _pipeline_out(result: PipelineResult) -> PipelineOut:
         lesion_mask=png_b64(mask) if mask is not None else None,
         overlay=png_b64(overlay_contour(result.image, mask)) if mask is not None else None,
         lesion_area_fraction=float(mask.mean()) if mask is not None else None,
-        features={
-            k: None if math.isnan(v) else v
-            for k, v in pdi_features.extract(result.image, mask, result.roi).items()
-        },
+        features=_clean(pdi_features.extract(result.image, mask, result.roi)),
     )
+
+
+def _model_probabilities(image: np.ndarray, out: PipelineOut) -> list[ModelProbabilityOut]:
+    """Probabilidade de cada modelo treinado sobre o pipeline desta combinação."""
+    config = PipelineConfig.from_dict(out.config)
+    rows = []
+    for m in inference.matching(config):
+        if m.kind == "cnn":
+            p = inference.predict(m, image)
+        else:
+            p = inference.predict_traditional(m, out.features)
+        rows.append(
+            ModelProbabilityOut(
+                id=m.sid,
+                description=m.description,
+                kind=m.kind,
+                probability_malignant=p,
+                threshold=m.threshold,
+                label=m.label(p),
+                auc_test=m.auc_test,
+            )
+        )
+    return rows
 
 
 # ---------------------------------------------------------------- rotas
@@ -169,19 +238,33 @@ def _pipeline_out(result: PipelineResult) -> PipelineOut:
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "model": predictor.name}
+    return {"status": "ok", "model": triage_predictor().name}
 
 
 @app.post("/predict")
 async def predict(file: UploadFile) -> PredictResponse:
-    image = await _read_image(file)
+    """Triagem: probabilidade do modelo escolhido (seção 2), Grad-CAM e indicadores ABCD."""
+    image = preprocess.normalize_input(await _read_image(file))
+    predictor = triage_predictor()
     result = predictor.predict(image)
+    trad = run(image, SCENARIOS["A5"].pipeline)
+    feats = _clean(pdi_features.extract(trad.image, trad.lesion_mask, trad.roi))
+    mask = trad.lesion_mask
     return PredictResponse(
         label=result.label,
         probability_malignant=result.probability_malignant,
         threshold=result.threshold,
         model=predictor.name,
         model_version=predictor.version,
+        model_description=predictor.description,
+        recommendation=RECOMMENDATIONS[result.label],
+        image=png_b64(image),
+        gradcam=None if result.gradcam is None else png_b64(overlay_heatmap(image, result.gradcam)),
+        lesion_overlay=png_b64(overlay_contour(image, mask))
+        if mask is not None and mask.any()
+        else None,
+        vignette_detected=trad.vignette_detected,
+        abcd={k: feats[k] for k in ABCD_FEATURES},
     )
 
 
@@ -237,12 +320,15 @@ async def compare_route(file: UploadFile, combinations: Annotated[str, Form()]) 
         label = str(item.get("label") or f"Combinação {i}")
         combos.append(Combination(label, _parse_config(item.get("config", {}))))
 
-    cmp = compare(await _read_image(file), combos)
+    raw = await _read_image(file)
+    cmp = compare(raw, combos)
+    image = preprocess.normalize_input(raw)
     dice = [[None if np.isnan(v) else float(v) for v in row] for row in cmp.mask_dice]
+    outs = [_pipeline_out(r) for r in cmp.results]
     return CompareOut(
         combinations=[
-            CombinationOut(label=c.label, result=_pipeline_out(r))
-            for c, r in zip(cmp.combinations, cmp.results, strict=True)
+            CombinationOut(label=c.label, result=o, models=_model_probabilities(image, o))
+            for c, o in zip(cmp.combinations, outs, strict=True)
         ],
         mask_dice=dice,
         figure=png_b64(figure(cmp)),

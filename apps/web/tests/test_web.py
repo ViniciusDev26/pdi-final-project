@@ -270,6 +270,143 @@ def test_resultados_renders_empty_report(monkeypatch):
     }
     monkeypatch.setattr(ApiClient, "report", lambda self: empty)
     monkeypatch.setattr(ApiClient, "figures", lambda self: {})
+    monkeypatch.setattr(
+        ApiClient, "visuals", lambda self: {"index": None, "notas": {}, "causas": []}
+    )
     at = AppTest.from_file(str(RESULTADOS)).run(timeout=10)
     assert not at.exception
     assert at.info[0].value.startswith("Nenhum cenário executado")
+
+
+def _png_b64() -> str:
+    import base64
+    from io import BytesIO
+
+    from PIL import Image
+
+    buf = BytesIO()
+    Image.new("RGB", (30, 30), (200, 160, 140)).save(buf, format="PNG")
+    return base64.b64encode(buf.getvalue()).decode()
+
+
+def test_resultados_error_analysis_saves_note(monkeypatch):
+    import base64
+
+    empty = {
+        "cenarios": [],
+        "impacto_etapas": [],
+        "tecnicas": [],
+        "modelos": [],
+        "triagem": None,
+        "segmentacao": [],
+        "vies": {},
+        "local": {},
+        "tempo": {},
+    }
+    case = {
+        "path": "test/benign/melanoma_4.jpg",
+        "imagem": "melanoma_4",
+        "tipo": "FP",
+        "y": 0,
+        "p": 0.97,
+        "figura": "erros/melanoma_4.png",
+    }
+    index = {
+        "gerado_em": "2026-11-15T00:00:00",
+        "commit": "abc",
+        "segmentacao": {"pendente": "sem máscaras"},
+        "erros": {"modelo": "C6", "figuras": {}, "casos": [case]},
+        "exemplos": {"presets": ["A0"], "figuras": {}, "imagens": []},
+    }
+    saved = {}
+    monkeypatch.setattr(ApiClient, "report", lambda self: empty)
+    monkeypatch.setattr(ApiClient, "figures", lambda self: {})
+    monkeypatch.setattr(
+        ApiClient,
+        "visuals",
+        lambda self: {"index": index, "notas": {}, "causas": ["pelos", "vinheta"]},
+    )
+    monkeypatch.setattr(ApiClient, "visual", lambda self, name: base64.b64decode(_png_b64()))
+    monkeypatch.setattr(
+        ApiClient,
+        "save_error_note",
+        lambda self, path, causa, nota: saved.update(path=path, causa=causa) or saved,
+    )
+    at = AppTest.from_file(str(RESULTADOS)).run(timeout=10)
+    assert not at.exception
+    causa = next(s for s in at.selectbox if s.label == "Causa provável")
+    causa.set_value("vinheta")
+    submit = next(b for b in at.button if b.label == "Salvar anotação")
+    submit.click().run()
+    assert saved == {"path": "test/benign/melanoma_4.jpg", "causa": "vinheta"}
+
+
+TRIAGEM = APP.parent / "views" / "triagem.py"
+BASE = APP.parent / "views" / "base_dados.py"
+
+
+def test_triagem_shows_probability_gradcam_and_abcd(monkeypatch):
+    img = _png_b64()
+    result = {
+        "label": "malignant",
+        "probability_malignant": 0.97,
+        "threshold": 0.933,
+        "model": "C6",
+        "model_version": "abc",
+        "model_description": "CNN, imagem bruta",
+        "recommendation": "Encaminhar ao dermatologista",
+        "image": img,
+        "gradcam": img,
+        "lesion_overlay": img,
+        "vignette_detected": True,
+        "abcd": {"n_cores": 3.0, "assimetria_eixo_maior": 0.2},
+    }
+    monkeypatch.setattr(ApiClient, "predict", lambda self, *a: result)
+    at = AppTest.from_file(str(TRIAGEM))
+    at.run(timeout=10)
+    assert not at.exception  # sem upload, a página só mostra o seletor de arquivo
+
+
+def test_base_dados_without_dataset(monkeypatch):
+    summary = {
+        "total": 10583,
+        "imagens_originais": 10605,
+        "duplicatas_removidas": 22,
+        "contagem": {"train": {"benign": 4000, "malignant": 4000}},
+        "vinheta": {"train": {"benign": 0.01, "malignant": 0.3}},
+        "vinheta_geral": {"benign": 0.01, "malignant": 0.3},
+        "dataset_disponivel": False,
+    }
+    monkeypatch.setattr(ApiClient, "dataset_summary", lambda self: summary)
+    at = AppTest.from_file(str(BASE)).run(timeout=10)
+    assert not at.exception
+    assert at.metric[2].value == "22"
+    assert "modo leitura" in at.info[0].value
+
+
+def test_base_dados_lists_images(monkeypatch):
+    import base64
+
+    summary = {
+        "total": 2,
+        "imagens_originais": 10605,
+        "duplicatas_removidas": 10603,
+        "contagem": {"train": {"benign": 1, "malignant": 1}},
+        "vinheta": {"train": {"benign": 0.0, "malignant": 1.0}},
+        "vinheta_geral": {"benign": 0.0, "malignant": 1.0},
+        "dataset_disponivel": True,
+    }
+    items = [
+        {
+            "path": "train/benign/melanoma_1.jpg",
+            "label": "benign",
+            "split": "train",
+            "vinheta": False,
+        }
+    ]
+    monkeypatch.setattr(ApiClient, "dataset_summary", lambda self: summary)
+    monkeypatch.setattr(ApiClient, "dataset_images", lambda self, **f: {"total": 1, "items": items})
+    monkeypatch.setattr(ApiClient, "dataset_image", lambda self, path: base64.b64decode(_png_b64()))
+    at = AppTest.from_file(str(BASE)).run(timeout=10)
+    assert not at.exception
+    assert any(b.label == "Simulador" for b in at.button)
