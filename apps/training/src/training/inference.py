@@ -49,11 +49,21 @@ def input_config(sc: Scenario) -> PipelineConfig:
     return sc.pipeline
 
 
+LFS_POINTER = b"version https://git-lfs"
+
+
+def is_lfs_pointer(path) -> bool:
+    """Arquivo de referência do Git LFS (modelo ainda não baixado com `git lfs pull`)."""
+    with open(path, "rb") as f:
+        return f.read(len(LFS_POINTER)) == LFS_POINTER
+
+
 def _model_file(sid: str):
     d = status.scenario_dir(sid)
     for name in ("model.pt", "model.joblib", "model.json"):
-        if (d / name).exists():
-            return d / name
+        path = d / name
+        if path.exists() and not is_lfs_pointer(path):
+            return path
     return None
 
 

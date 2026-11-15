@@ -43,3 +43,16 @@ def test_matching_and_feature_subsets():
     feats = dict.fromkeys(features.FEATURE_NAMES, 0.5)
     p = inference.predict_traditional(inference.get("C4"), feats)
     assert 0.0 <= p <= 1.0
+
+
+def test_lfs_pointer_is_treated_as_missing_model(tmp_path, monkeypatch):
+    import json
+
+    monkeypatch.setattr(cfg, "RESULTS_DIR", tmp_path)
+    d = tmp_path / "C2"
+    d.mkdir()
+    (d / "metrics.json").write_text(json.dumps({"limiar": 0.4}))
+    (d / "model.joblib").write_text(
+        "version https://git-lfs.github.com/spec/v1\noid sha256:abc\nsize 123\n"
+    )
+    assert inference.available() == []

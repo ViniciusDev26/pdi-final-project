@@ -84,10 +84,11 @@ def test_predict_uses_triage_model_with_gradcam(monkeypatch):
     assert body["model"] == "C6" and body["gradcam"]
     assert body["threshold"] == pytest.approx(0.933, abs=1e-3)
     comp = {m["id"]: m for m in body["comparison"]}
-    assert list(comp) == ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "V3"]
+    assert list(comp) == ["C8", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "V3"]
     assert comp["C6"]["probability_malignant"] == body["probability_malignant"]
-    assert {m["kind"] for m in comp.values()} == {"tradicional", "cnn"}
-    assert all(0 <= m["probability_malignant"] <= 1 for m in comp.values())
+    assert {m["kind"] for m in comp.values()} == {"regra", "tradicional", "cnn"}
+    assert all(0 <= m["probability_malignant"] <= 1 for m in comp.values() if m["kind"] != "regra")
+    assert comp["C8"]["score_name"] == "TDS" and 1 <= comp["C8"]["probability_malignant"] <= 8.9
     assert comp["C1"]["sensitivity_test"] is not None
 
 
