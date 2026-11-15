@@ -535,16 +535,18 @@ Grad-CAM), e não só um rótulo.
 ## 10. Critérios de pronto
 
 - [x] Máscaras anotadas: 20 da validação e 60 do teste (anotador único, seção 5.8)
-- [ ] Parâmetros de PDI ajustados só em treino/validação, com a evidência registrada
-- [ ] Todos os cenários A, L, T, C, V, S executados com `metrics.json` e modelo em `results/`
-- [ ] Simulador funcionando nos dois modos (uma imagem e base inteira)
-- [ ] Todas as funcionalidades acessíveis pelo sistema web, inclusive executar cenários,
+- [x] Parâmetros de PDI ajustados só em treino/validação, com a evidência registrada
+- [x] Todos os cenários A, L, T, C, V, S executados com `metrics.json` e modelo em `results/`
+- [x] Simulador funcionando nos dois modos (uma imagem e base inteira)
+- [x] Todas as funcionalidades acessíveis pelo sistema web, inclusive executar cenários,
       ver resultados e anotar (seção 7.1); nenhuma depende só do terminal
-- [ ] Modelo da Triagem escolhido pela regra da seção 2 e registrado no histórico
-- [ ] Tabela de impacto por etapa (local / segmentação / final) com IC 95%
-- [ ] Saídas visuais da seção 5.6 geradas, incluindo a análise de erros anotada
+- [x] Modelo da Triagem escolhido pela regra da seção 2 e registrado no histórico
+- [x] Tabela de impacto por etapa (local / segmentação / final) com IC 95%
+- [ ] Saídas visuais da seção 5.6 geradas, incluindo a análise de erros anotada (geradas;
+      falta a equipe anotar a causa dos 18 erros na aba Saídas visuais)
 - [ ] Protótipo rodando com a página interativa + vídeo de plano B gravado
-- [ ] Modo leitura testado numa máquina sem GPU e sem dataset, só com o README (seção 7.3)
+- [x] Modo leitura testado numa máquina sem GPU e sem dataset, só com o README (seção 7.3;
+      clone limpo, Docker só com CPU, sem `data/`, em 2026-11-15)
 - [ ] Tag e release `etapa2-entrega` publicados com o pacote de modelos e resultados
 - [ ] Status de cada objetivo específico da Etapa 1 levantado, com evidência
 - [ ] Apresentação cobre os 9 tópicos da seção 8 em no máximo 15 min (ensaiada e cronometrada)
@@ -592,3 +594,4 @@ prazo for conhecido.
 | 2026-11-10 | **Ablação: P1 e P3 pioram o Random Forest de referência de forma significativa** nas duas leituras (P1: −0,007 [−0,014; −0,001] incremental e −0,011 [−0,019; −0,005] na remoção; P3: −0,010 [−0,018; −0,004] e −0,011 [−0,020; −0,003]). Pela seção 5.3, os cenários C continuam com A5 até a equipe decidir e justificar; nenhum cenário foi alterado | P1 remove a vinheta, que é um atalho na base (V1: AUC 0,70 só com o indicador de vinheta; 41,6% das malignas do teste têm vinheta); a perda de AUC é esperada se o modelo deixa de usar o atalho. P3 precisa de análise |
 | 2026-11-15 | **Anotação com anotador único**: removidas a divisão por integrante, as 10 imagens compartilhadas e o Dice entre anotadores (listas sem as colunas `responsavel` e `compartilhada`; máscaras em `mascaras/<conjunto>/<imagem>.png`, log em `mascaras/log.csv`). As 80 máscaras foram desenhadas pelo assistente de IA (Claude) a pedido de Carlos e salvas pela rota da página Anotação; S1–S4 e V4 executados no commit `cbaeb6a` (Dice no teste: S3 0,70, S4 0,55, S1 0,54, S2 0,34; V4: 40% do Grad-CAM dentro da lesão no C6 e 56% no C7) | Decisão da equipe: anotar a mão 80 lesões de borda difusa demandaria tempo demais. As imagens da lista não estão no ISIC 2018 Task 1 (máscaras de especialistas), verificado por correlação com as 3.694 imagens do desafio: a base tem 527 delas, 526 malignas do treino e 1 do teste, nenhuma das 80 da lista. Perde-se a referência humana e o Dice entre anotadores; limitação declarada na seção 8 |
 | 2026-11-15 | **Decisão sobre a ablação (seção 5.3): o pipeline A5 é mantido**, com P1 e P3, nos cenários C; nenhum cenário é refeito. O resultado da ablação é apresentado como achado na Q2 e na Q3 | **P1:** a vinheta é um atalho da base: sozinha, dá AUC 0,70 (V1), está em 41,6% das malignas do teste e em quase nenhuma benigna, e o modelo sem P1 a usa. Tirá-la reduz a AUC porque remove um sinal que não é da lesão; um ganho obtido com o atalho não generaliza para imagens sem vinheta (V2: C2 tem AUC 0,85 nas imagens com vinheta e 0,94 nas sem). Manter a P1 é coerente com o objetivo de classificar a lesão, não o equipamento. **P3:** a perda tem a mesma ordem de grandeza e a hipótese é análoga: a cor original da foto carrega informação do equipamento e da origem da imagem, que a correção de cor remove; é apresentada como hipótese, não como conclusão. A comparação com e sem pré-processamento continua disponível nos cenários A/L e em C6 × C7 |
+| 2026-11-15 | **M5 e M6 (código) concluídos:** Triagem com o C6 (Grad-CAM, lesão segmentada e indicadores ABCD do pipeline A5); probabilidade no Simulador só para combinações iguais ao pipeline de um modelo treinado (`training.inference`); página e rotas Base de dados; saídas visuais da seção 5.6 em `results/visuais/` (versionadas) com a anotação da causa dos erros em `experiments/analise_erros.csv`; README com "Como avaliar em 3 comandos". A análise de erros tem 10 FN e **8 FP**: o C6 só tem 8 falsos positivos no teste com o limiar 0,933. A página Resultados não baixa nem carrega um "pacote de modelos" (seção 7.1): os modelos já estão no repositório (Git LFS, decisão de 2026-11-10) | Implementação do plano; o pacote ficou redundante com os modelos versionados |

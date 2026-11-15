@@ -59,7 +59,8 @@ def overview(metrics: dict[str, dict]) -> list[dict]:
             "id": sid,
             "grupo": sc.group,
             "descricao": sc.description,
-            "estado": st.get("state", "nao_executado"),
+            # status.json não é versionado: num clone (modo leitura) só há o metrics.json
+            "estado": st.get("state", "concluido" if m else "nao_executado"),
         }
         if m:
             for block, prefix in (("teste", ""), ("teste_sem_vinheta", "sem_vinheta_")):

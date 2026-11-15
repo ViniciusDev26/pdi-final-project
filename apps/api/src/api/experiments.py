@@ -46,7 +46,12 @@ def list_scenarios() -> list[ScenarioOut]:
             uses_gpu=s.uses_gpu,
             depends=list(s.depends),
             config=s.pipeline.to_dict() if s.pipeline else None,
-            status=status.read(s.id) or {"state": "nao_executado"},
+            status=status.read(s.id)
+            or {
+                "state": "concluido"
+                if (status.scenario_dir(s.id) / "metrics.json").exists()
+                else "nao_executado"
+            },
             has_results=(status.scenario_dir(s.id) / "metrics.json").exists(),
         )
         for s in SCENARIOS.values()

@@ -41,7 +41,7 @@ comparando PDI tradicional com CNN. Visão geral e comandos no [README](README.m
 
 ## Estado (2026-11-15, desktop)
 
-Pronto (M1–M4 implementados e executados):
+Pronto (M1–M5 e o código do M6):
 - `pdi`: P0 + P1–P5 + S configuráveis; P2 corrigido e calibrado (`training.calibrate_p2`);
   características F (38 valores, `pdi.features`); artefatos sintéticos (`pdi.artifacts`).
 - `experiments/`: listas fixas geradas por `training.experiment_lists` (não refazer) e as 80
@@ -52,7 +52,13 @@ Pronto (M1–M4 implementados e executados):
 - CNN: `training.cnn` (protocolo 5.7, Grad-CAM); ~14–16 s por época na 4060 Ti.
 - API: pipeline/simulador, `/annotations`, `/scenarios`, `/jobs` (fila persistente em
   `results/_fila.json`, sobrevive a reinício), `/results`.
-- Web: Triagem (ainda com o dummy), Simulador, Experimentos, Resultados, Anotação.
+- Web: Triagem (modelo C6, Grad-CAM, ABCD), Simulador (probabilidade só para combinações
+  iguais ao pipeline de um modelo: `training.inference`), Experimentos, Resultados (com a aba
+  Saídas visuais), Base de dados, Anotação.
+- Saídas visuais da seção 5.6: `training.visuals` → `results/visuais/` (versionado, serve o
+  modo leitura); causa dos erros anotada em `experiments/analise_erros.csv`.
+- Modo leitura testado (clone limpo, Docker só CPU, sem dataset): README "Como avaliar em 3
+  comandos".
 - Docker: `just up-gpu` (override `infra/docker-compose.gpu.yml`, GPU por CDI).
 
 Resultados oficiais (commit `6ee6538`, Docker com GPU) versionados em `results/<ID>/`:
@@ -70,10 +76,9 @@ Resultados oficiais (commit `6ee6538`, Docker com GPU) versionados em `results/<
   ocupa 21% da imagem em média).
 
 Próximo:
-- **M5:** Triagem com o C6 (substituir o `DummyPredictor`, com Grad-CAM e indicadores ABCD
-  do pipeline tradicional), página Base de dados, probabilidade no simulador para
-  combinações com modelo treinado, saídas visuais da seção 5.6.
-- **M6/M7:** modo leitura, README "como avaliar em 3 comandos", tag/release, slides.
+- Equipe: anotar a causa provável dos 18 erros do C6 (Resultados → Saídas visuais).
+- **M6:** tag `etapa2-entrega` e release, vídeo do plano B, zip para o AVA (formato a
+  confirmar). **M7:** slides e ensaios.
 
 Problemas conhecidos:
 - Limiarização adaptativa (S2/S4) fragmenta lesões grandes.
