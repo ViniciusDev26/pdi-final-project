@@ -76,8 +76,10 @@ Resultados oficiais (commit `6ee6538`, Docker com GPU) versionados em `results/<
   ocupa 21% da imagem em média).
 
 Próximo:
-- **M6:** tag `etapa2-entrega` e release, vídeo do plano B, zip para o AVA (formato a
-  confirmar). **M7:** slides e ensaios.
+- Status dos objetivos da Etapa 1: `docs/PDI_Etapa2_Status_Objetivos.md` (5 cumpridos, 1
+  parcial: segmentação). Slides da apresentação: deck no claude.ai (exporta PDF/PPTX).
+- Falta: vídeo do plano B, ensaios cronometrados, formato de entrega no AVA; tag/release
+  dispensados pela equipe por ora.
 
 Problemas conhecidos:
 - Limiarização adaptativa (S2/S4) fragmenta lesões grandes.

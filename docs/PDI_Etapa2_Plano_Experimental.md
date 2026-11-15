@@ -547,7 +547,8 @@ Grad-CAM), e não só um rótulo.
 - [x] Modo leitura testado numa máquina sem GPU e sem dataset, só com o README (seção 7.3;
       clone limpo, Docker só com CPU, sem `data/`, em 2026-11-15)
 - [ ] Tag e release `etapa2-entrega` publicados com o pacote de modelos e resultados
-- [ ] Status de cada objetivo específico da Etapa 1 levantado, com evidência
+- [x] Status de cada objetivo específico da Etapa 1 levantado, com evidência
+      ([`PDI_Etapa2_Status_Objetivos.md`](PDI_Etapa2_Status_Objetivos.md))
 - [ ] Apresentação cobre os 9 tópicos da seção 8 em no máximo 15 min (ensaiada e cronometrada)
 
 ### 10.1 Opcionais (só se houver tempo)

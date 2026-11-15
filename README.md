@@ -34,6 +34,7 @@ Para refazer tudo (modo completo), veja [Setup](#setup) e [Experimentos](#experi
 | Etapa | Documento | Apresentação | Enunciado |
 |---|---|---|---|
 | 1 — Equipe, público-alvo e proposta | [PDI_Etapa1_Equipe_e_Proposta.pdf](docs/PDI_Etapa1_Equipe_e_Proposta.pdf) | [PDI_Etapa1_Apresentacao.pdf](docs/PDI_Etapa1_Apresentacao.pdf) | [Instruções da professora](<docs/[PDI] - Etapa 1 - instruções.pdf>) |
+| 2 — Implementação e avaliação | [Plano experimental](docs/PDI_Etapa2_Plano_Experimental.md) · [Status dos objetivos](docs/PDI_Etapa2_Status_Objetivos.md) | slides (deck do claude.ai, exportado em PDF) | [Instruções da professora](<docs/[PDI] - Etapa 2 - instruções.pdf>) |
 
 O PDF da Etapa 1 é gerado a partir de [`docs/gerar_etapa1.py`](docs/gerar_etapa1.py):
 edite o texto no script e rode `just docs-etapa1`.
