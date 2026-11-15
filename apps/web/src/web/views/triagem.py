@@ -9,7 +9,7 @@ import httpx
 import pandas as pd
 import streamlit as st
 
-from web.common import api_error_message, b64_image, get_client
+from web.common import api_error_message, b64_image, get_client, model_label
 
 TITLES = {
     "malignant": ("Suspeita de melanoma", st.error),
@@ -112,7 +112,7 @@ else:
         [
             {
                 "Abordagem": APPROACH[m["kind"]],
-                "Modelo": f"{m['id']} · {m['description']}",
+                "Modelo": model_label(m),
                 "Prob. de melanoma (%)": m["probability_malignant"] * 100,
                 "Limiar (%)": m["threshold"] * 100,
                 "Resultado": "melanoma" if m["label"] == "malignant" else "benigna",

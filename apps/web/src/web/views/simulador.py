@@ -10,7 +10,13 @@ import httpx
 import pandas as pd
 import streamlit as st
 
-from web.common import api_error_message, b64_image, features_table, get_client
+from web.common import (
+    api_error_message,
+    b64_image,
+    features_table,
+    get_client,
+    model_label,
+)
 
 # presets sugeridos para as colunas: sem × com pré-processamento, técnica X × Y
 DEFAULT_PRESETS = ("A0", "A5", "T4", "L1")
@@ -225,7 +231,7 @@ with tab_final:
                     pd.DataFrame(
                         [
                             {
-                                "Modelo": f"{m['id']} · {m['description']}",
+                                "Modelo": model_label(m),
                                 "Prob.": m["probability_malignant"],
                                 "Limiar": m["threshold"],
                                 "Resultado": "maligna" if m["label"] == "malignant" else "benigna",
