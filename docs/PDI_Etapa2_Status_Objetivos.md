@@ -56,6 +56,10 @@ Objetivo geral (protótipo que segmenta e classifica, comparando PDI tradicional
 - C1 SVM: AUC 0,949 [0,936; 0,960], sensibilidade 87,6%, especificidade 85,8%.
   C2 RF: AUC 0,945 [0,931; 0,956], sensibilidade 90,2%, especificidade 81,6%.
 - Por grupo (RF): cor sozinha 0,930, forma 0,868, textura 0,805.
+- **Classificador 100% PDI (C8, incluído depois):** regra ABCD da dermatoscopia (TDS), sem
+  nenhum parâmetro aprendido com os rótulos: AUC 0,781 [0,751; 0,810], sensibilidade 56,2% e
+  especificidade 80,8% no corte da literatura (4,75). Mostra quanto o aprendizado acrescenta:
+  0,781 (só regras) → 0,949 (PDI + SVM) → 0,976 (CNN).
 
 ### 4. CNN e comparação — cumprido
 

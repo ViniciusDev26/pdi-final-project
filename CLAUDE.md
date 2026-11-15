@@ -65,6 +65,8 @@ Resultados oficiais (commit `6ee6538`, Docker com GPU) versionados em `results/<
 `model.pt`, no Git LFS). Para refazer um cenário: página Experimentos (ou
 `just experimento <ID>`), depois commitar os arquivos novos de `results/<ID>/`.
 - AUC no teste: C7 0,977, C6 0,976, V3 0,954, C1 0,949, C2/A5 0,945, A0 0,960.
+- C8 (regra ABCD/TDS, 100% PDI, sem aprendizado; `pdi.tds`, `training.rule_tds`): AUC 0,781,
+  sensibilidade 56%, especificidade 81% no corte 4,75 (commit `d26994e`).
 - Ablação: P1 e P3 pioram o RF com significância; decisão da equipe (2026-11-15): manter
   o A5 e apresentar como achado (P1 remove o atalho da vinheta; P3 é hipótese). Histórico do plano.
 - Modelo da Triagem pela regra da seção 2: **C6** (AUC val 0,989, limiar 0,933).

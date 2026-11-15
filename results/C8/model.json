@@ -1,0 +1,21 @@
+{
+  "regra": "TDS (Stolz et al., 1994)",
+  "pesos": {
+    "A": 1.3,
+    "B": 0.1,
+    "C": 0.5,
+    "D": 0.5
+  },
+  "corte_suspeita": 4.75,
+  "corte_melanoma": 5.45,
+  "cortes_medidas": {
+    "assimetria": 0.14936922549670428,
+    "borda_setor": 63.237486204942215,
+    "rede": 0.0038632990038879383,
+    "sem_estrutura": 0.050129310600741855,
+    "pontos": 19.0,
+    "globulos": 7.0,
+    "estrias": 0.0
+  },
+  "origem_cortes": "mediana de cada medida nas lesões do treino, sem usar os rótulos"
+}

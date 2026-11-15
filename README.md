@@ -136,6 +136,7 @@ Ti via Docker): `metrics.json` com as métricas e IC 95%, `predictions.csv`, `hi
 | C6 | CNN, imagem bruta | 0,976 (0,968–0,984) |
 | C1 | características F + SVM | 0,949 (0,936–0,960) |
 | C2 | características F + Random Forest | 0,945 (0,931–0,956) |
+| C8 | regra ABCD da dermatoscopia (TDS), 100% PDI, sem aprendizado | 0,781 (0,751–0,810) |
 
 O modelo da Triagem, pela regra do plano (maior AUC na validação), é o **C6**. A página
 **Resultados** mostra todos os cenários, o impacto por etapa e a análise de viés. Na
