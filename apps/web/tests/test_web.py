@@ -177,22 +177,16 @@ ANOTACAO = APP.parent / "views" / "anotacao.py"
 def _ann_listing(conjunto):
     return {
         "conjunto": conjunto,
-        "annotators": ["Renan", "Guilherme", "Carlos"],
         "items": [
             {
                 "name": "melanoma_1",
                 "path": "test/benign/melanoma_1.jpg",
                 "label": "benign",
                 "vinheta": False,
-                "responsavel": "Renan",
-                "compartilhada": False,
-                "annotators": ["Renan"],
-                "done": {"Renan": False},
+                "done": False,
             }
         ],
-        "progress": [{"conjunto": conjunto, "anotador": "Renan", "total": 1, "feitas": 0}],
-        "inter_annotator": [],
-        "inter_annotator_mean": None,
+        "progress": [{"conjunto": conjunto, "total": 1, "feitas": 0}],
     }
 
 
@@ -209,20 +203,18 @@ def test_anotacao_renders_pending_image(monkeypatch):
     monkeypatch.setattr(
         ApiClient,
         "annotation_image",
-        lambda self, c, n, a: {"name": n, "image": image, "mask": None},
+        lambda self, c, n: {"name": n, "image": image, "mask": None},
     )
     at = AppTest.from_file(str(ANOTACAO)).run(timeout=10)
     assert not at.exception
-    assert at.session_state["ann_annotator"] == "Renan"
     save = next(b for b in at.button if b.label == "Salvar máscara")
     assert save.disabled  # sem contorno ainda
 
 
-def test_anotacao_shows_message_for_annotator_without_images(monkeypatch):
-    monkeypatch.setattr(ApiClient, "annotations", lambda self, c: _ann_listing(c))
+def test_anotacao_shows_message_for_empty_list(monkeypatch):
+    monkeypatch.setattr(ApiClient, "annotations", lambda self, c: {**_ann_listing(c), "items": []})
     at = AppTest.from_file(str(ANOTACAO)).run(timeout=10)
-    next(s for s in at.selectbox if s.key == "ann_annotator").set_value("Carlos").run()
-    assert at.info[0].value.startswith("Nenhuma imagem atribuída")
+    assert at.info[0].value.startswith("A lista de anotação")
 
 
 EXPERIMENTOS = APP.parent / "views" / "experimentos.py"

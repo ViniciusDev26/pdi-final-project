@@ -13,5 +13,3 @@ SEED = 42
 EXPERIMENTS_DIR = Path(os.environ.get("PDI_EXPERIMENTS_DIR", REPO_ROOT / "experiments"))
 RESULTS_DIR = Path(os.environ.get("PDI_RESULTS_DIR", REPO_ROOT / "results"))
 MASKS_DIR = EXPERIMENTS_DIR / "mascaras"
-# integrantes que anotam as máscaras de referência (seção 5.8 do plano)
-ANNOTATORS = ("Renan", "Guilherme", "Carlos")

@@ -50,7 +50,7 @@ são reexecutados.
 | Modelo da Triagem | o modelo C (seção 5.3) com **maior AUC na validação**, com o limiar acima; a escolha é registrada no histórico. Os indicadores ABCD exibidos vêm sempre do pipeline tradicional, qualquer que seja o modelo escolhido |
 | Métrica principal de comparação | **AUC-ROC no teste** (independe do limiar) |
 | Métricas secundárias | sensibilidade, especificidade, precisão, F1, acurácia balanceada, matriz de confusão (no limiar fixado), tempo por imagem |
-| Métrica de segmentação | Dice e IoU nas 60 máscaras do teste; Dice entre anotadores como referência (seção 5.8) |
+| Métrica de segmentação | Dice e IoU nas 60 máscaras do teste (seção 5.8) |
 | Incerteza | intervalo de confiança 95% por bootstrap (1.000 reamostragens do teste) em toda métrica reportada |
 
 > **Ajuste em relação à Etapa 1:** a proposta citava validação cruzada no treino; o
@@ -268,20 +268,21 @@ diferenças venham só da entrada.
 
 ### 5.8 Protocolo de anotação das máscaras
 
-- **Ferramenta:** página **Anotação** do sistema web (seção 7.1): o anotador desenha o
-  contorno da lesão sobre a imagem e salva. Não se usa ferramenta externa.
+- **Ferramenta:** página **Anotação** do sistema web (seção 7.1): desenha-se o contorno
+  da lesão sobre a imagem e salva-se (rota `PUT /annotations/{conjunto}/{imagem}`). Não se
+  usa ferramenta externa.
 - **O que anotar:** toda a área pigmentada da lesão, inclusive a periferia mais clara;
   pelos sobre a lesão são considerados parte dela; vinheta, régua e marcações ficam de
   fora.
-- **Formato:** PNG binário 300 × 300, um por imagem e anotador, em
-  `experiments/mascaras/{val,teste}/<anotador>/<arquivo>.png`, **versionado no git**
-  (arquivos pequenos); cada salvamento é registrado em `experiments/mascaras/anotadores.csv`.
-  A máscara de referência é a do responsável pela imagem (coluna `responsavel` da lista);
-  nas compartilhadas, as dos outros dois servem só ao Dice entre anotadores.
-- **Divisão:** cada integrante anota 1/3 das imagens. **10 imagens do teste são anotadas
-  pelos três**: o Dice entre anotadores é reportado como referência — uma segmentação
-  automática com Dice próximo ao dos anotadores entre si está no limite do que a anotação
-  permite medir.
+- **Formato:** PNG binário 300 × 300, um por imagem, em
+  `experiments/mascaras/{val,teste}/<arquivo>.png`, **versionado no git** (arquivos
+  pequenos); cada salvamento é registrado em `experiments/mascaras/log.csv`.
+- **Autoria (revisado em 2026-11-15):** anotador único, sem divisão entre integrantes nem
+  Dice entre anotadores. As 80 máscaras foram desenhadas pelo assistente de IA (Claude) a
+  pedido da equipe: contorno poligonal sobre a imagem ampliada com grade de coordenadas e
+  uma versão com contraste realçado (CLAHE), sem ver a segmentação automática, e conferido
+  numa revisão visual das 80 sobreposições antes de salvar. É uma limitação a declarar
+  (seção 8): a referência não é de dermatologista nem de um anotador humano.
 - As máscaras do teste não são abertas nem usadas durante o ajuste do pipeline.
 
 ## 6. Simulador: comparador de técnicas e combinações
@@ -386,7 +387,7 @@ Páginas do sistema web:
 | **Experimentos** | equipe | lista os cenários congelados (A, L, T, C, V, S) com status; botão **Executar** para um cenário ou para todos; progresso e log em tempo real; reexecução |
 | **Resultados — base inteira** | equipe e banca | tabela comparativa com IC 95%, filtro com/sem vinheta, impacto por etapa (A/L/T), ROC e matrizes de confusão (C), Dice/IoU (S), V1–V5, Grad-CAM e análise de erros (seção 5.6); exporta figuras e tabelas; baixa e carrega o pacote de modelos e resultados (seção 7.3) |
 | **Base de dados** | equipe e banca | distribuição das classes e divisões, duplicatas removidas, prevalência da vinheta por classe, exemplos por classe; envia uma imagem da base para o Simulador |
-| **Anotação** | equipe | desenha e salva as máscaras de referência das listas de anotação (seção 5.8), com progresso por anotador e Dice entre anotadores |
+| **Anotação** | equipe | desenha e salva as máscaras de referência das listas de anotação (seção 5.8), com o progresso por conjunto |
 
 Execução de experimentos pela web:
 
@@ -479,7 +480,7 @@ máximo; a soma fica abaixo dos 15 minutos para sobrar margem.
 | 3 | Arquitetura e ferramentas | diagrama: imagem → web (Streamlit) → API (FastAPI) → `pdi` (pipeline) → modelo; treino no servidor com GPU gerando `models/`; ferramentas: Python, OpenCV, scikit-image, scikit-learn, PyTorch, FastAPI, Streamlit, Docker, uv | README + diagrama | 1 min |
 | 4 | Técnicas de PDI implementadas | uma figura "antes → depois" por etapa (P1–P5, S, F) com uma frase sobre o que ela faz | seção 3 | 2,5 min |
 | 5 | Demonstração do protótipo | no sistema web: página Triagem (fluxo do profissional da APS) e Simulador ao vivo, com comparação lado a lado (sem × com pré-processamento, técnica X × Y, tradicional × CNN) | seções 6.2 e 7.1 | 3 min |
-| 6 | Resultados visuais e métricas | apresentados pela página Resultados: impacto por etapa (A/L) e técnicas alternativas (T) (Q2); tabela e ROC tradicional × CNN (Q1); viés da vinheta, V5 e Grad-CAM (Q3); Dice/IoU com a referência entre anotadores; erros típicos | seções 5, 5.6, 6.3 e 7.1 | 3,5 min |
+| 6 | Resultados visuais e métricas | apresentados pela página Resultados: impacto por etapa (A/L) e técnicas alternativas (T) (Q2); tabela e ROC tradicional × CNN (Q1); viés da vinheta, V5 e Grad-CAM (Q3); Dice/IoU contra as máscaras de referência; erros típicos | seções 5, 5.6, 6.3 e 7.1 | 3,5 min |
 | 7 | Limitações | ver seção 8.1 | — | 1 min |
 | 8 | Contribuição para o público-alvo | ver seção 8.2 | — | 0,5 min |
 | 9 | Conclusões e melhorias | respostas diretas a Q1, Q2 e Q3 + ver seção 8.3 | — | 1 min |
@@ -500,7 +501,8 @@ carregadas localmente, para o caso de falha de rede, de máquina ou de tempo.
 - Tarefa binária: o protótipo não reconhece outros tipos de lesão (carcinoma
   basocelular, queratoses etc.).
 - Exige imagem dermatoscópica; não funciona com foto comum de celular.
-- Máscaras de referência anotadas pela equipe (não por dermatologista), em 80 imagens.
+- Máscaras de referência desenhadas por IA (Claude), sem revisão de dermatologista nem
+  Dice entre anotadores, em 80 imagens (seção 5.8).
 - Comparações entre etapas tratadas como exploratórias (seção 4).
 - Sem validação clínica: ferramenta de apoio à triagem, não diagnóstico.
 
@@ -527,12 +529,12 @@ Grad-CAM), e não só um rótulo.
 | P1–P5 e técnicas alternativas (incl. correção do P2), S, F (seção 3.1), artefatos sintéticos | Renan | `pdi/*` |
 | Protocolo de treino (5.7); cenários A, L, T, C, V, S; CNN; Grad-CAM; simulador modo "base inteira" | Guilherme | `training/*`, `results/`, tabelas e gráficos |
 | Engine de cenários; sistema web completo (6 páginas da seção 7.1); API, fila de experimentos e resultados; P0; README, release e pacote de entrega (7.3) | Carlos | `pipeline.py`, `compare.py`, `api`, `web`, `justfile`, `README.md` |
-| Anotação das 80 máscaras (5.8), 1/3 cada + 10 compartilhadas | todos | `experiments/mascaras/` |
+| Anotação das 80 máscaras (5.8), anotador único | Carlos (desenhadas por IA a pedido dele) | `experiments/mascaras/` |
 | Apresentação (15 min) | todos | slides seguindo os 9 tópicos do enunciado |
 
 ## 10. Critérios de pronto
 
-- [ ] Máscaras anotadas: 20 da validação e 60 do teste, com as 10 compartilhadas pelos três
+- [x] Máscaras anotadas: 20 da validação e 60 do teste (anotador único, seção 5.8)
 - [ ] Parâmetros de PDI ajustados só em treino/validação, com a evidência registrada
 - [ ] Todos os cenários A, L, T, C, V, S executados com `metrics.json` e modelo em `results/`
 - [ ] Simulador funcionando nos dois modos (uma imagem e base inteira)
@@ -588,3 +590,4 @@ prazo for conhecido.
 | 2026-11-10 | Primeira execução oficial (desktop, Docker com GPU, commit `6ee6538`): 27 de 32 cenários concluídos; S1–S4 e V4 aguardam as máscaras anotadas | — |
 | 2026-11-10 | **Modelo da Triagem: C6** (CNN na imagem bruta), maior AUC na validação entre os cenários C (0,989; C7: 0,985; C1: 0,946), com limiar 0,933 escolhido na validação (regra da seção 2) | Escolha registrada conforme a seção 2 |
 | 2026-11-10 | **Ablação: P1 e P3 pioram o Random Forest de referência de forma significativa** nas duas leituras (P1: −0,007 [−0,014; −0,001] incremental e −0,011 [−0,019; −0,005] na remoção; P3: −0,010 [−0,018; −0,004] e −0,011 [−0,020; −0,003]). Pela seção 5.3, os cenários C continuam com A5 até a equipe decidir e justificar; nenhum cenário foi alterado | P1 remove a vinheta, que é um atalho na base (V1: AUC 0,70 só com o indicador de vinheta; 41,6% das malignas do teste têm vinheta); a perda de AUC é esperada se o modelo deixa de usar o atalho. P3 precisa de análise |
+| 2026-11-15 | **Anotação com anotador único**: removidas a divisão por integrante, as 10 imagens compartilhadas e o Dice entre anotadores (listas sem as colunas `responsavel` e `compartilhada`; máscaras em `mascaras/<conjunto>/<imagem>.png`, log em `mascaras/log.csv`). As 80 máscaras foram desenhadas pelo assistente de IA (Claude) a pedido de Carlos e salvas pela rota da página Anotação; S1–S4 e V4 executados (seção 5.8) | Decisão da equipe: anotar a mão 80 lesões de borda difusa demandaria tempo demais. As imagens da lista não estão no ISIC 2018 Task 1 (máscaras de especialistas), verificado por correlação com as 3.694 imagens do desafio: a base tem 527 delas, 526 malignas do treino e 1 do teste, nenhuma das 80 da lista. Perde-se a referência humana e o Dice entre anotadores; limitação declarada na seção 8 |

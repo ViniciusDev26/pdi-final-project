@@ -95,7 +95,7 @@ API os coloca numa fila e roda um por vez num processo separado, gravando em
 `results/<ID>/` o `metrics.json` (métricas com IC 95%, commit e ambiente), as predições, o
 modelo e o log. A página **Resultados** consolida tudo (impacto por etapa, ROC, viés,
 figuras para os slides). Cenários S e V4 dependem das máscaras desenhadas na página
-**Anotação**.
+**Anotação** (80 máscaras de referência, já salvas em `experiments/mascaras/`).
 
 ### Resultados oficiais
 
@@ -111,8 +111,10 @@ Ti via Docker): `metrics.json` com as métricas e IC 95%, `predictions.csv`, `hi
 | C2 | características F + Random Forest | 0,945 (0,931–0,956) |
 
 O modelo da Triagem, pela regra do plano (maior AUC na validação), é o **C6**. A página
-**Resultados** mostra todos os cenários, o impacto por etapa e a análise de viés. S1–S4 e
-V4 aguardam as máscaras anotadas.
+**Resultados** mostra todos os cenários, o impacto por etapa e a análise de viés. Na
+segmentação, a padrão (S3: Otsu + morfologia + componente central) tem Dice 0,70 no teste. As
+máscaras de referência foram desenhadas por IA a pedido da equipe, não por dermatologista
+(plano, seção 5.8).
 
 **Números oficiais só do servidor de experimentos** (Linux, RTX 4060 Ti), via
 `just up-gpu`. A GPU é repassada ao contêiner por CDI (`nvidia-ctk cdi generate`). Em

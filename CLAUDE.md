@@ -39,12 +39,14 @@ comparando PDI tradicional com CNN. Visão geral e comandos no [README](README.m
 - No Streamlit, `selectbox` com valor `None` aparece vazio; use um valor sentinela
   (ex.: `"off"`) e converta ao montar a configuração.
 
-## Estado (2026-11-10, desktop)
+## Estado (2026-11-15, desktop)
 
 Pronto (M1–M4 implementados e executados):
 - `pdi`: P0 + P1–P5 + S configuráveis; P2 corrigido e calibrado (`training.calibrate_p2`);
   características F (38 valores, `pdi.features`); artefatos sintéticos (`pdi.artifacts`).
-- `experiments/`: listas fixas geradas por `training.experiment_lists` (não refazer).
+- `experiments/`: listas fixas geradas por `training.experiment_lists` (não refazer) e as 80
+  máscaras de referência em `experiments/mascaras/<conjunto>/` (anotador único, desenhadas
+  por IA a pedido da equipe; plano 5.8). Não existe mais divisão por anotador.
 - Engine: `training.run_scenario` (32 cenários), `training.report`, cache do pipeline por
   configuração em `results/_cache/` (fora do git; invalidado quando o código de `pdi` muda).
 - CNN: `training.cnn` (protocolo 5.7, Grad-CAM); ~14–16 s por época na 4060 Ti.
@@ -61,11 +63,13 @@ Resultados oficiais (commit `6ee6538`, Docker com GPU) versionados em `results/<
 - Modelo da Triagem pela regra da seção 2: **C6** (AUC val 0,989, limiar 0,933).
 - V1: vinheta sozinha dá AUC 0,70. V5: vinheta artificial em 50 benignas faz 46 virarem
   malignas no C6 e 31 no C7; no RF com P1 (C2) a variação é ≈ 0.
-- S1–S4 e V4 falharam de propósito: aguardam as máscaras anotadas.
+- Segmentação (Dice no teste, 60 máscaras): S3 (Otsu + morfologia, padrão) 0,70, S4 0,55,
+  S1 0,54, S2 0,34. V4: fração do Grad-CAM dentro da lesão 0,40 no C6 e 0,56 no C7 (a lesão
+  ocupa 21% da imagem em média).
 
 Próximo:
 - Equipe: decidir sobre a ablação (P1 e P3 pioram o RF com significância; histórico do
-  plano) e anotar as 80 máscaras (página Anotação) → rodar S1–S4 e V4.
+  plano).
 - **M5:** Triagem com o C6 (substituir o `DummyPredictor`, com Grad-CAM e indicadores ABCD
   do pipeline tradicional), página Base de dados, probabilidade no simulador para
   combinações com modelo treinado, saídas visuais da seção 5.6.

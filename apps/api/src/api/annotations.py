@@ -20,25 +20,19 @@ class ItemOut(BaseModel):
     path: str
     label: str
     vinheta: bool
-    responsavel: str
-    compartilhada: bool
-    annotators: list[str]
-    done: dict[str, bool]  # anotador → já salvou a máscara
+    done: bool  # máscara já salva
 
 
 class AnnotationListOut(BaseModel):
     conjunto: str
-    annotators: list[str]
     items: list[ItemOut]
     progress: list[dict[str, Any]]
-    inter_annotator: list[dict[str, Any]]  # Dice entre anotadores (compartilhadas do teste)
-    inter_annotator_mean: float | None
 
 
 class AnnotationImageOut(BaseModel):
     name: str
     image: str  # PNG base64 da imagem após P0 (300 × 300)
-    mask: str | None  # máscara já salva por este anotador
+    mask: str | None  # máscara já salva
 
 
 def _item(conjunto: str, name: str) -> ann.Item:
@@ -57,40 +51,30 @@ def _check_set(conjunto: str) -> None:
 def list_annotations(conjunto: str) -> AnnotationListOut:
     _check_set(conjunto)
     items = ann.items(conjunto, cfg.EXPERIMENTS_DIR)
-    inter = ann.inter_annotator_dice(cfg.EXPERIMENTS_DIR, cfg.MASKS_DIR)
     return AnnotationListOut(
         conjunto=conjunto,
-        annotators=list(cfg.ANNOTATORS),
         items=[
             ItemOut(
                 name=i.name,
                 path=i.path,
                 label=i.label,
                 vinheta=i.vinheta,
-                responsavel=i.responsavel,
-                compartilhada=i.compartilhada,
-                annotators=list(i.annotators),
-                done={
-                    a: ann.mask_path(conjunto, a, i.name, cfg.MASKS_DIR).exists()
-                    for a in i.annotators
-                },
+                done=ann.mask_path(conjunto, i.name, cfg.MASKS_DIR).exists(),
             )
             for i in items
         ],
         progress=ann.progress(cfg.EXPERIMENTS_DIR, cfg.MASKS_DIR).to_dict("records"),
-        inter_annotator=inter.to_dict("records"),
-        inter_annotator_mean=float(inter["dice"].mean()) if len(inter) else None,
     )
 
 
 @router.get("/{conjunto}/{name}")
-def annotation_image(conjunto: str, name: str, annotator: str) -> AnnotationImageOut:
+def annotation_image(conjunto: str, name: str) -> AnnotationImageOut:
     item = _item(conjunto, name)
     path = cfg.DATASET_DIR / item.path
     if not path.exists():
         raise HTTPException(status_code=503, detail="Dataset não disponível nesta máquina")
     image = preprocess.normalize_input(load_rgb(path))
-    mask = ann.load_mask(conjunto, annotator, name, cfg.MASKS_DIR)
+    mask = ann.load_mask(conjunto, name, cfg.MASKS_DIR)
     return AnnotationImageOut(
         name=name, image=png_b64(image), mask=png_b64(mask) if mask is not None else None
     )
@@ -108,7 +92,6 @@ def polygon_mask(points: list[list[float]], size: int = preprocess.INPUT_SIZE) -
 def save_annotation(
     conjunto: str,
     name: str,
-    annotator: Annotated[str, Form()],
     points: Annotated[str, Form()],
 ) -> dict[str, Any]:
     """Salva a máscara a partir do polígono `points` (JSON: lista de [x, y], ≥ 3 pontos)."""
@@ -123,7 +106,7 @@ def save_annotation(
     if not valid:
         raise HTTPException(status_code=422, detail="Informe um contorno com pelo menos 3 pontos")
     try:
-        path = ann.save_mask(item, annotator, polygon_mask(pts), cfg.MASKS_DIR)
+        path = ann.save_mask(item, polygon_mask(pts), cfg.MASKS_DIR)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
     return {"saved": str(path.relative_to(cfg.EXPERIMENTS_DIR.parent))}

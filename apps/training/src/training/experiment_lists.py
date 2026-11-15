@@ -6,8 +6,7 @@ seleção usa só o rótulo e o detector de vinheta da etapa P1 (não há ajuste
 - `vinheta.csv`: vinheta detectada pela P1 em cada imagem da base;
 - `exemplos_ids.csv`: 6 imagens da validação para as figuras "antes → depois";
 - `anotacao_val_ids.csv`: 20 da validação (10 benignas, 10 malignas; metade com vinheta);
-- `anotacao_teste_ids.csv`: 60 do teste (30 + 30; metade com vinheta quando houver), 10
-  delas anotadas pelos três integrantes;
+- `anotacao_teste_ids.csv`: 60 do teste (30 + 30; metade com vinheta quando houver);
 - `teste_sem_vinheta.csv`: imagens do teste sem vinheta;
 - `v5_ids.csv`: 50 benignas do teste sem vinheta (cenário V5).
 
@@ -20,9 +19,7 @@ from concurrent.futures import ProcessPoolExecutor
 import pandas as pd
 
 from pdi import load_rgb, preprocess
-from training.config import ANNOTATORS, DATASET_DIR, EXPERIMENTS_DIR, SEED, SPLITS_CSV
-
-N_SHARED = 10
+from training.config import DATASET_DIR, EXPERIMENTS_DIR, SEED, SPLITS_CSV
 
 
 def _has_vignette(path: str) -> bool:
@@ -48,27 +45,19 @@ def _balanced(df: pd.DataFrame, per_class: int, seed: int) -> pd.DataFrame:
     return pd.concat(parts).sample(frac=1, random_state=seed).reset_index(drop=True)
 
 
-def _assign(df: pd.DataFrame, shared: int = 0) -> pd.DataFrame:
-    """Divide as imagens entre os anotadores; as `shared` primeiras são de todos."""
-    df = df.copy()
-    df["compartilhada"] = [i < shared for i in range(len(df))]
-    df["responsavel"] = [ANNOTATORS[i % len(ANNOTATORS)] for i in range(len(df))]
-    return df
-
-
 def build(vig: pd.DataFrame) -> dict[str, pd.DataFrame]:
     val, test = vig[vig["split"] == "val"], vig[vig["split"] == "test"]
     cols = ["path", "label", "vinheta"]
     examples = _balanced(val, 3, SEED + 1)[cols]
-    ann_val = _assign(_balanced(val, 10, SEED))
-    ann_test = _assign(_balanced(test, 30, SEED), shared=N_SHARED)
+    ann_val = _balanced(val, 10, SEED)[cols]
+    ann_test = _balanced(test, 30, SEED)[cols]
     no_vig = test[~test["vinheta"]][["path", "label"]]
     v5 = no_vig[no_vig["label"] == "benign"].sample(50, random_state=SEED)[["path"]]
     return {
         "vinheta.csv": vig,
         "exemplos_ids.csv": examples,
-        "anotacao_val_ids.csv": ann_val[[*cols, "responsavel", "compartilhada"]],
-        "anotacao_teste_ids.csv": ann_test[[*cols, "responsavel", "compartilhada"]],
+        "anotacao_val_ids.csv": ann_val,
+        "anotacao_teste_ids.csv": ann_test,
         "teste_sem_vinheta.csv": no_vig.sort_values("path"),
         "v5_ids.csv": v5.sort_values("path"),
     }
