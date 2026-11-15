@@ -97,6 +97,8 @@ class PredictResponse(BaseModel):
     lesion_overlay: str | None  # contorno da segmentação do pipeline tradicional (A5)
     vignette_detected: bool
     abcd: dict[str, float | None]  # indicadores ABCD do pipeline tradicional (A5)
+    # todos os modelos treinados sobre a mesma imagem: PDI tradicional × CNN (seção 5.3)
+    comparison: list["ModelProbabilityOut"] = []
 
 
 class TechniqueOut(BaseModel):
@@ -161,6 +163,8 @@ class ModelProbabilityOut(BaseModel):
     threshold: float
     label: str
     auc_test: float | None
+    sensitivity_test: float | None = None
+    specificity_test: float | None = None
 
 
 class CombinationOut(BaseModel):
@@ -168,6 +172,9 @@ class CombinationOut(BaseModel):
     result: PipelineOut
     # modelos treinados exatamente sobre o pipeline desta combinação (seção 6.2)
     models: list[ModelProbabilityOut]
+
+
+PredictResponse.model_rebuild()
 
 
 class CompareOut(BaseModel):
@@ -235,6 +242,41 @@ def _pipeline_out(result: PipelineResult) -> PipelineOut:
     )
 
 
+def _probability_out(m: inference.TrainedModel, p: float) -> "ModelProbabilityOut":
+    return ModelProbabilityOut(
+        id=m.sid,
+        description=m.description,
+        kind=m.kind,
+        probability_malignant=p,
+        threshold=m.threshold,
+        label=m.label(p),
+        auc_test=m.auc_test,
+        sensitivity_test=m.sensitivity_test,
+        specificity_test=m.specificity_test,
+    )
+
+
+def _triage_comparison(
+    image: np.ndarray, feats: dict, known: dict[str, float]
+) -> list["ModelProbabilityOut"]:
+    """Cada modelo da comparação sobre a imagem: os tradicionais usam as características do
+    pipeline A5 já extraídas; as CNNs recebem a entrada com que foram treinadas."""
+    a5 = SCENARIOS["A5"].pipeline
+    rows = []
+    for m in inference.available():
+        if m.sid not in inference.TRIAGE_COMPARISON:
+            continue
+        if m.sid in known:
+            p = known[m.sid]
+        elif m.kind == "tradicional" and m.config == a5:
+            p = inference.predict_traditional(m, feats)
+        else:
+            p = inference.predict(m, image)
+        rows.append(_probability_out(m, p))
+    order = {sid: i for i, sid in enumerate(inference.TRIAGE_COMPARISON)}
+    return sorted(rows, key=lambda r: order[r.id])
+
+
 def _model_probabilities(image: np.ndarray, out: PipelineOut) -> list[ModelProbabilityOut]:
     """Probabilidade de cada modelo treinado sobre o pipeline desta combinação."""
     config = PipelineConfig.from_dict(out.config)
@@ -244,17 +286,7 @@ def _model_probabilities(image: np.ndarray, out: PipelineOut) -> list[ModelProba
             p = inference.predict(m, image)
         else:
             p = inference.predict_traditional(m, out.features)
-        rows.append(
-            ModelProbabilityOut(
-                id=m.sid,
-                description=m.description,
-                kind=m.kind,
-                probability_malignant=p,
-                threshold=m.threshold,
-                label=m.label(p),
-                auc_test=m.auc_test,
-            )
-        )
+        rows.append(_probability_out(m, p))
     return rows
 
 
@@ -306,6 +338,7 @@ async def predict(file: UploadFile) -> PredictResponse:
         else None,
         vignette_detected=trad.vignette_detected,
         abcd={k: feats[k] for k in ABCD_FEATURES},
+        comparison=_triage_comparison(image, feats, {predictor.name: result.probability_malignant}),
     )
 
 

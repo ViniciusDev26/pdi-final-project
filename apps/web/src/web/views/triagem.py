@@ -95,3 +95,58 @@ else:
         "Indicadores calculados na lesão segmentada pelo pipeline de PDI tradicional; servem "
         "para explicar a imagem e não entram na probabilidade da CNN."
     )
+
+# ---------------------------------------------------------------- PDI tradicional × CNN
+
+st.subheader("Comparação: PDI tradicional × CNN nesta imagem")
+comparison = result.get("comparison") or []
+if not comparison:
+    st.info("Nenhum modelo treinado disponível para comparar.")
+else:
+    APPROACH = {"tradicional": "PDI tradicional", "cnn": "CNN"}
+
+    def pct(v):
+        return None if v is None else v * 100
+
+    table = pd.DataFrame(
+        [
+            {
+                "Abordagem": APPROACH[m["kind"]],
+                "Modelo": f"{m['id']} · {m['description']}",
+                "Prob. de melanoma (%)": m["probability_malignant"] * 100,
+                "Limiar (%)": m["threshold"] * 100,
+                "Resultado": "melanoma" if m["label"] == "malignant" else "benigna",
+                "AUC (teste)": m["auc_test"],
+                "Sensib. (teste, %)": pct(m["sensitivity_test"]),
+                "Especif. (teste, %)": pct(m["specificity_test"]),
+            }
+            for m in comparison
+        ]
+    )
+    for kind, label in APPROACH.items():
+        sub = [m for m in comparison if m["kind"] == kind]
+        if sub:
+            positives = sum(m["label"] == "malignant" for m in sub)
+            st.caption(f"{label}: {positives} de {len(sub)} modelos indicam melanoma.")
+    st.dataframe(
+        table.style.format(
+            {
+                "Prob. de melanoma (%)": "{:.1f}",
+                "Limiar (%)": "{:.1f}",
+                "AUC (teste)": "{:.3f}",
+                "Sensib. (teste, %)": "{:.1f}",
+                "Especif. (teste, %)": "{:.1f}",
+            },
+            na_rep="—",
+        ),
+        hide_index=True,
+        width="stretch",
+    )
+    st.caption(
+        f"O resultado principal acima vem do {result['model']}, escolhido pela maior AUC na "
+        "validação (regra do plano). Cada modelo usa o próprio limiar, escolhido na validação "
+        "para sensibilidade ≥ 90%. Tradicionais: 38 características (ou só forma, cor ou "
+        "textura) extraídas da lesão segmentada pelo pipeline completo. CNN: C6 na imagem "
+        "bruta, C7 na imagem pré-processada, V3 só na lesão. As colunas de teste são o "
+        "desempenho de cada modelo nas 999 imagens de teste, não nesta imagem."
+    )

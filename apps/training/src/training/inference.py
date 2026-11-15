@@ -35,6 +35,8 @@ class TrainedModel:
     threshold: float
     auc_val: float | None
     auc_test: float | None
+    sensitivity_test: float | None = None
+    specificity_test: float | None = None
 
     def label(self, p: float) -> str:
         return "malignant" if p >= self.threshold else "benign"
@@ -53,6 +55,14 @@ def _model_file(sid: str):
         if (d / name).exists():
             return d / name
     return None
+
+
+def _test_metric(m: dict, key: str) -> float | None:
+    return m.get("teste", {}).get(key, {}).get("valor")
+
+
+# modelos comparados na Triagem: tradicionais (C1–C5) e CNN (C6, C7, V3), seção 5.3
+TRIAGE_COMPARISON = ("C1", "C2", "C3", "C4", "C5", "C6", "C7", "V3")
 
 
 def available() -> list[TrainedModel]:
@@ -76,7 +86,9 @@ def available() -> list[TrainedModel]:
                 feature_groups=sc.feature_groups,
                 threshold=float(m["limiar"]),
                 auc_val=m.get("validacao", {}).get("auc"),
-                auc_test=m.get("teste", {}).get("auc", {}).get("valor"),
+                auc_test=_test_metric(m, "auc"),
+                sensitivity_test=_test_metric(m, "sensibilidade"),
+                specificity_test=_test_metric(m, "especificidade"),
             )
         )
     return out

@@ -51,7 +51,7 @@ Pronto (M1–M5 e o código do M6):
 - CNN: `training.cnn` (protocolo 5.7, Grad-CAM); ~14–16 s por época na 4060 Ti.
 - API: pipeline/simulador, `/annotations`, `/scenarios`, `/jobs` (fila persistente em
   `results/_fila.json`, sobrevive a reinício), `/results`.
-- Web: Triagem (modelo C6, Grad-CAM, ABCD), Simulador (probabilidade só para combinações
+- Web: Triagem (modelo C6, Grad-CAM, ABCD e tabela PDI tradicional × CNN com os 8 modelos), Simulador (probabilidade só para combinações
   iguais ao pipeline de um modelo: `training.inference`), Experimentos, Resultados (com a aba
   Saídas visuais), Base de dados, Anotação.
 - Saídas visuais da seção 5.6: `training.visuals` → `results/visuais/` (versionado, serve o

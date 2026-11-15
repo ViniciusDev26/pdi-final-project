@@ -360,6 +360,30 @@ def test_triagem_shows_probability_gradcam_and_abcd(monkeypatch):
         "lesion_overlay": img,
         "vignette_detected": True,
         "abcd": {"n_cores": 3.0, "assimetria_eixo_maior": 0.2},
+        "comparison": [
+            {
+                "id": "C1",
+                "description": "SVM",
+                "kind": "tradicional",
+                "probability_malignant": 0.4,
+                "threshold": 0.43,
+                "label": "benign",
+                "auc_test": 0.949,
+                "sensitivity_test": 0.876,
+                "specificity_test": 0.858,
+            },
+            {
+                "id": "C6",
+                "description": "CNN",
+                "kind": "cnn",
+                "probability_malignant": 0.97,
+                "threshold": 0.933,
+                "label": "malignant",
+                "auc_test": 0.976,
+                "sensitivity_test": 0.874,
+                "specificity_test": 0.984,
+            },
+        ],
     }
     monkeypatch.setattr(ApiClient, "predict", lambda self, *a: result)
     at = AppTest.from_file(str(TRIAGEM))

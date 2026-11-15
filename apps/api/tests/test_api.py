@@ -65,6 +65,7 @@ def test_predict_returns_label_and_probability():
     assert body["label"] == "malignant"
     assert 0.0 <= body["probability_malignant"] <= 1.0
     assert body["model"] == "dummy" and body["gradcam"] is None
+    assert body["comparison"] == []  # sem modelos treinados
     assert body["recommendation"] == "Encaminhar ao dermatologista"
 
 
@@ -82,6 +83,12 @@ def test_predict_uses_triage_model_with_gradcam(monkeypatch):
     body = client.post("/predict", files=_file()).json()
     assert body["model"] == "C6" and body["gradcam"]
     assert body["threshold"] == pytest.approx(0.933, abs=1e-3)
+    comp = {m["id"]: m for m in body["comparison"]}
+    assert list(comp) == ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "V3"]
+    assert comp["C6"]["probability_malignant"] == body["probability_malignant"]
+    assert {m["kind"] for m in comp.values()} == {"tradicional", "cnn"}
+    assert all(0 <= m["probability_malignant"] <= 1 for m in comp.values())
+    assert comp["C1"]["sensitivity_test"] is not None
 
 
 def test_predict_rejects_non_image():

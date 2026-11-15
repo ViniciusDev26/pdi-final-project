@@ -382,7 +382,7 @@ Páginas do sistema web:
 
 | Página | Para quem | O que faz |
 |---|---|---|
-| **Triagem** | público-alvo (profissional da APS) | envia uma imagem e recebe: lesão segmentada, indicadores ABCD, probabilidade, Grad-CAM e a recomendação (encaminhar / acompanhar), com o aviso de que não substitui diagnóstico |
+| **Triagem** | público-alvo (profissional da APS) | envia uma imagem e recebe: lesão segmentada, indicadores ABCD, probabilidade, Grad-CAM e a recomendação (encaminhar / acompanhar), com o aviso de que não substitui diagnóstico; abaixo, a tabela com a probabilidade de todos os modelos treinados (PDI tradicional C1–C5 × CNN C6, C7, V3) na mesma imagem |
 | **Simulador — uma imagem** | equipe e banca | monta combinações de técnicas (seção 6.1), mostra cada etapa e compara 2 a 4 combinações lado a lado (seção 6.2); baixa a grade em PNG |
 | **Experimentos** | equipe | lista os cenários congelados (A, L, T, C, V, S) com status; botão **Executar** para um cenário ou para todos; progresso e log em tempo real; reexecução |
 | **Resultados — base inteira** | equipe e banca | tabela comparativa com IC 95%, filtro com/sem vinheta, impacto por etapa (A/L/T), ROC e matrizes de confusão (C), Dice/IoU (S), V1–V5, Grad-CAM e análise de erros (seção 5.6); exporta figuras e tabelas; baixa e carrega o pacote de modelos e resultados (seção 7.3) |
