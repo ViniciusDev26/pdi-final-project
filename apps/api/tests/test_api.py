@@ -38,7 +38,17 @@ def _jpeg(color: tuple[int, int, int]) -> bytes:
 
 
 def test_health():
-    assert client.get("/health").json() == {"status": "ok", "model": "dummy"}
+    assert client.get("/health").json() == {"status": "ok", "model": "dummy", "read_only": False}
+
+
+def test_read_only_blocks_writes_but_allows_analysis(monkeypatch):
+    monkeypatch.setenv("PDI_READ_ONLY", "1")
+    assert client.get("/health").json()["read_only"] is True
+    assert client.post("/jobs", json={"ids": ["A0"]}).status_code == 403
+    assert client.put("/annotations/val/x", data={"points": "[]"}).status_code == 403
+    assert client.post("/results/visuals").status_code == 403
+    assert client.post("/pipeline", files=_file()).status_code == 200
+    assert client.get("/scenarios").status_code == 200
 
 
 def test_predict_returns_label_and_probability():

@@ -1,0 +1,40 @@
+name: pdi-melanoma-deploy
+
+# Deploy público (Coolify): modo leitura, só CPU, sem dataset. Os modelos e resultados vão
+# dentro da imagem da API (deploy.Dockerfile); a API recusa operações que gravam
+# (PDI_READ_ONLY). O domínio é configurado no Coolify para o serviço `web` (porta 8501).
+services:
+  api:
+    build:
+      context: ..
+      dockerfile: infra/deploy.Dockerfile
+    command: uvicorn api.main:app --host 0.0.0.0 --port 8000
+    environment:
+      PDI_READ_ONLY: "1"
+      PDI_GIT_COMMIT: ${SOURCE_COMMIT:-desconhecido}
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  web:
+    build:
+      context: ..
+      dockerfile: infra/python.Dockerfile
+      args:
+        APP: web
+    command: >
+      streamlit run apps/web/src/web/app.py
+      --server.address 0.0.0.0 --server.port 8501 --server.headless true
+      --browser.gatherUsageStats false
+    expose:
+      - "8501"
+    environment:
+      PDI_API_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped

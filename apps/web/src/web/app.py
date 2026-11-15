@@ -20,6 +20,8 @@ with st.sidebar:
         st.error("API indisponível")
     else:
         st.success(f"API online · modelo: {status['model']}")
+        if status.get("read_only"):
+            st.info("Modo leitura: executar cenários, anotar e gerar figuras estão desativados.")
 
 nav = st.navigation(
     {

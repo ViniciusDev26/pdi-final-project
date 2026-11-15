@@ -1,10 +1,12 @@
 import json
 import math
+import os
 from contextlib import asynccontextmanager
 from typing import Annotated, Any
 
 import numpy as np
-from fastapi import FastAPI, Form, HTTPException, UploadFile
+from fastapi import FastAPI, Form, HTTPException, Request, UploadFile
+from fastapi.responses import JSONResponse
 from PIL import UnidentifiedImageError
 from pydantic import BaseModel
 
@@ -54,6 +56,28 @@ app = FastAPI(title="PDI Melanoma API", version="0.4.0", lifespan=lifespan)
 app.include_router(annotations.router)
 app.include_router(experiments.router)
 app.include_router(dataset_routes.router)
+
+# Deploy público (modo leitura): só consultas e as análises de uma imagem enviada; nada que
+# grave em results/ ou experiments/ nem que dispare cenários.
+READ_ONLY_ALLOWED = {"/predict", "/pipeline", "/compare"}
+
+
+def read_only() -> bool:
+    return os.environ.get("PDI_READ_ONLY", "").lower() in {"1", "true", "sim"}
+
+
+@app.middleware("http")
+async def block_writes_in_read_only(request: Request, call_next):
+    if (
+        read_only()
+        and request.method not in {"GET", "HEAD", "OPTIONS"}
+        and request.url.path not in READ_ONLY_ALLOWED
+    ):
+        return JSONResponse(
+            status_code=403,
+            content={"detail": "Sistema em modo leitura: esta operação está desativada aqui."},
+        )
+    return await call_next(request)
 
 
 # ---------------------------------------------------------------- esquemas
@@ -237,8 +261,8 @@ def _model_probabilities(image: np.ndarray, out: PipelineOut) -> list[ModelProba
 
 
 @app.get("/health")
-def health() -> dict[str, str]:
-    return {"status": "ok", "model": triage_predictor().name}
+def health() -> dict[str, Any]:
+    return {"status": "ok", "model": triage_predictor().name, "read_only": read_only()}
 
 
 @app.post("/predict")
