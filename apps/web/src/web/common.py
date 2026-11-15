@@ -55,6 +55,7 @@ MODEL_NAMES = {
     "C5": "RF só textura",
     "C6": "CNN, imagem bruta",
     "C7": "CNN, pré-processada",
+    "C8": "regra ABCD/TDS, 100% PDI",
     "V3": "CNN, só a lesão",
 }
 
@@ -62,3 +63,11 @@ MODEL_NAMES = {
 def model_label(model: dict) -> str:
     """ "C1 (SVM)"; cai na descrição do cenário se o ID não tiver nome curto."""
     return f"{model['id']} ({MODEL_NAMES.get(model['id'], model['description'])})"
+
+
+def score_text(model: dict, key: str = "probability_malignant") -> str:
+    """Probabilidade em % ou, na regra TDS (C8), o escore (não é probabilidade)."""
+    value = model[key]
+    if model.get("score_name"):
+        return f"{model['score_name']} {value:.2f}".replace(".", ",")
+    return f"{value * 100:.1f}%".replace(".", ",")

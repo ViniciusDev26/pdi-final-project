@@ -28,8 +28,8 @@ EXCLUDED = frozenset({"V1"})
 class TrainedModel:
     sid: str
     description: str
-    kind: str  # "tradicional" ou "cnn"
-    model: str  # svm, rf, cnn
+    kind: str  # "tradicional", "cnn" ou "regra" (C8: TDS, 100% PDI)
+    model: str  # svm, rf, cnn, tds
     config: PipelineConfig  # pipeline da entrada do modelo
     feature_groups: tuple[str, ...] | None
     threshold: float
@@ -51,7 +51,7 @@ def input_config(sc: Scenario) -> PipelineConfig:
 
 def _model_file(sid: str):
     d = status.scenario_dir(sid)
-    for name in ("model.pt", "model.joblib"):
+    for name in ("model.pt", "model.joblib", "model.json"):
         if (d / name).exists():
             return d / name
     return None
@@ -61,8 +61,9 @@ def _test_metric(m: dict, key: str) -> float | None:
     return m.get("teste", {}).get(key, {}).get("valor")
 
 
-# modelos comparados na Triagem: tradicionais (C1–C5) e CNN (C6, C7, V3), seção 5.3
-TRIAGE_COMPARISON = ("C1", "C2", "C3", "C4", "C5", "C6", "C7", "V3")
+# modelos comparados na Triagem: regra 100% PDI (C8), tradicionais (C1–C5) e CNN (C6, C7, V3)
+TRIAGE_COMPARISON = ("C8", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "V3")
+KINDS = {"cnn": "cnn", "tds": "regra"}
 
 
 def available() -> list[TrainedModel]:
@@ -80,7 +81,7 @@ def available() -> list[TrainedModel]:
             TrainedModel(
                 sid=sid,
                 description=sc.description,
-                kind="cnn" if sc.model == "cnn" else "tradicional",
+                kind=KINDS.get(sc.model, "tradicional"),
                 model=sc.model,
                 config=input_config(sc),
                 feature_groups=sc.feature_groups,
@@ -129,8 +130,33 @@ def predict_traditional(m: TrainedModel, feats: dict) -> float:
     return float(model.predict_proba(feature_vector(feats, m.feature_groups))[0, 1])
 
 
+@lru_cache(maxsize=4)
+def _tds_cutoffs(sid: str):
+    from pdi import tds
+
+    model = json.loads((status.scenario_dir(sid) / "model.json").read_text())
+    return tds.Cutoffs.from_dict(model["cortes_medidas"])
+
+
+def tds_result(m: TrainedModel, image: np.ndarray) -> dict:
+    """C8: critérios A, B, C, D e o TDS da imagem (após P0), só com PDI."""
+    from pdi import tds
+
+    res = run_pipeline(image, m.config)
+    meas = tds.measures(res.image, res.lesion_mask)
+    if meas is None:
+        return {"A": 0, "B": 0, "C": 1, "D": 1, "estruturas": [], "tds": tds.TDS_MIN}
+    feats = features.extract(res.image, res.lesion_mask, res.roi)
+    crit = tds.criteria(feats, meas, _tds_cutoffs(m.sid))
+    return crit | {"tds": tds.score(crit)}
+
+
 def predict(m: TrainedModel, image: np.ndarray, feats: dict | None = None) -> float:
-    """Probabilidade de melanoma para a imagem (após P0). `feats` evita refazer o pipeline."""
+    """Probabilidade de melanoma para a imagem (após P0); no C8, o TDS (não é probabilidade).
+
+    `feats` evita refazer o pipeline nos tradicionais."""
+    if m.kind == "regra":
+        return float(tds_result(m, image)["tds"])
     if m.kind == "cnn":
         from training import cnn
 

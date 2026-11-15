@@ -136,7 +136,7 @@ def technique_impact(metrics: dict[str, dict]) -> list[dict]:
 
 def model_comparison(metrics: dict[str, dict]) -> list[dict]:
     rows = []
-    for sid in ("C1", "C2", "C3", "C4", "C5", "C6", "C7", "V3"):
+    for sid in ("C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8", "V3"):
         m = metrics.get(sid)
         if not m:
             continue

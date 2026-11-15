@@ -58,7 +58,7 @@ def test_recover_marks_stale_jobs_as_interrupted(client):
 
 def test_report_and_figures_work_without_results(client):
     body = client.get("/results/report").json()
-    assert len(body["cenarios"]) == 32 and body["triagem"] is None
+    assert len(body["cenarios"]) == 33 and body["triagem"] is None
     for name in client.get("/results/figures").json():
         resp = client.get(f"/results/figures/{name}.png")
         assert resp.status_code == 200 and resp.content[:4] == b"\x89PNG"

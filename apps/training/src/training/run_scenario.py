@@ -324,6 +324,12 @@ def _run_gradcam(sc: Scenario, out, progress: Progress) -> dict:
     return cnn.run_gradcam_scenario(sc, out, progress)
 
 
+def _run_rule(sc: Scenario, out, progress: Progress) -> dict:
+    from training import rule_tds
+
+    return rule_tds.run(sc, out, progress, classification_block)
+
+
 HANDLERS = {
     "ablation": run_ablation,
     "traditional": run_traditional,
@@ -333,6 +339,7 @@ HANDLERS = {
     "synthetic_vignette": run_synthetic_vignette,
     "cnn": _run_cnn,
     "gradcam": _run_gradcam,
+    "rule": _run_rule,
 }
 
 

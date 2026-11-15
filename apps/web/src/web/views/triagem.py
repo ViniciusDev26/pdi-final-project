@@ -9,7 +9,7 @@ import httpx
 import pandas as pd
 import streamlit as st
 
-from web.common import api_error_message, b64_image, get_client, model_label
+from web.common import api_error_message, b64_image, get_client, model_label, score_text
 
 TITLES = {
     "malignant": ("Suspeita de melanoma", st.error),
@@ -98,12 +98,16 @@ else:
 
 # ---------------------------------------------------------------- PDI tradicional × CNN
 
-st.subheader("Comparação: PDI tradicional × CNN nesta imagem")
+st.subheader("Comparação: PDI puro × PDI tradicional × CNN nesta imagem")
 comparison = result.get("comparison") or []
 if not comparison:
     st.info("Nenhum modelo treinado disponível para comparar.")
 else:
-    APPROACH = {"tradicional": "PDI tradicional", "cnn": "CNN"}
+    APPROACH = {
+        "regra": "PDI puro (regra, sem aprendizado)",
+        "tradicional": "PDI tradicional (PDI + classificador)",
+        "cnn": "CNN",
+    }
 
     def pct(v):
         return None if v is None else v * 100
@@ -113,8 +117,8 @@ else:
             {
                 "Abordagem": APPROACH[m["kind"]],
                 "Modelo": model_label(m),
-                "Prob. de melanoma (%)": m["probability_malignant"] * 100,
-                "Limiar (%)": m["threshold"] * 100,
+                "Prob. de melanoma": score_text(m),
+                "Limiar": score_text(m, "threshold"),
                 "Resultado": "melanoma" if m["label"] == "malignant" else "benigna",
                 "AUC (teste)": m["auc_test"],
                 "Sensib. (teste, %)": pct(m["sensitivity_test"]),
@@ -131,8 +135,6 @@ else:
     st.dataframe(
         table.style.format(
             {
-                "Prob. de melanoma (%)": "{:.1f}",
-                "Limiar (%)": "{:.1f}",
                 "AUC (teste)": "{:.3f}",
                 "Sensib. (teste, %)": "{:.1f}",
                 "Especif. (teste, %)": "{:.1f}",
@@ -148,5 +150,17 @@ else:
         "para sensibilidade ≥ 90%. Tradicionais: 38 características (ou só forma, cor ou "
         "textura) extraídas da lesão segmentada pelo pipeline completo. CNN: C6 na imagem "
         "bruta, C7 na imagem pré-processada, V3 só na lesão. As colunas de teste são o "
-        "desempenho de cada modelo nas 999 imagens de teste, não nesta imagem."
+        "desempenho de cada modelo nas 999 imagens de teste, não nesta imagem. A regra C8 "
+        "(TDS) não dá probabilidade: soma pontos dos critérios ABCD com os pesos da literatura "
+        "e encaminha a partir de 4,75."
     )
+    rule = next((m for m in comparison if m["kind"] == "regra" and m.get("details")), None)
+    if rule:
+        d = rule["details"]
+        structures = ", ".join(d.get("estruturas") or []) or "nenhuma acima do típico"
+        st.markdown(
+            f"**Regra ABCD (TDS) nesta imagem:** A = {d['A']} eixo(s) assimétrico(s), "
+            f"B = {d['B']} de 8 segmentos de borda abrupta, C = {d['C']} cor(es), "
+            f"D = {d['D']} estrutura(s) ({structures}) → TDS = 1,3·{d['A']} + 0,1·{d['B']} "
+            f"+ 0,5·{d['C']} + 0,5·{d['D']} = **{d['tds']:.2f}**".replace(".", ",")
+        )

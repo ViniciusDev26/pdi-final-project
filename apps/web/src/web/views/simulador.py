@@ -16,6 +16,7 @@ from web.common import (
     features_table,
     get_client,
     model_label,
+    score_text,
 )
 
 # presets sugeridos para as colunas: sem × com pré-processamento, técnica X × Y
@@ -232,13 +233,13 @@ with tab_final:
                         [
                             {
                                 "Modelo": model_label(m),
-                                "Prob.": m["probability_malignant"],
-                                "Limiar": m["threshold"],
+                                "Prob.": score_text(m),
+                                "Limiar": score_text(m, "threshold"),
                                 "Resultado": "maligna" if m["label"] == "malignant" else "benigna",
                             }
                             for m in combo["models"]
                         ]
-                    ).style.format({"Prob.": "{:.1%}", "Limiar": "{:.3f}"}),
+                    ),
                     hide_index=True,
                     width="stretch",
                 )

@@ -165,6 +165,9 @@ class ModelProbabilityOut(BaseModel):
     auc_test: float | None
     sensitivity_test: float | None = None
     specificity_test: float | None = None
+    # C8 (regra TDS): probability_malignant guarda o TDS, que não é probabilidade
+    score_name: str | None = None
+    details: dict[str, Any] | None = None  # critérios A, B, C, D e estruturas do TDS
 
 
 class CombinationOut(BaseModel):
@@ -242,8 +245,12 @@ def _pipeline_out(result: PipelineResult) -> PipelineOut:
     )
 
 
-def _probability_out(m: inference.TrainedModel, p: float) -> "ModelProbabilityOut":
+def _probability_out(
+    m: inference.TrainedModel, p: float, details: dict | None = None
+) -> "ModelProbabilityOut":
     return ModelProbabilityOut(
+        score_name="TDS" if m.kind == "regra" else None,
+        details=details,
         id=m.sid,
         description=m.description,
         kind=m.kind,
@@ -266,6 +273,10 @@ def _triage_comparison(
     for m in inference.available():
         if m.sid not in inference.TRIAGE_COMPARISON:
             continue
+        if m.kind == "regra":
+            res = inference.tds_result(m, image)
+            rows.append(_probability_out(m, res["tds"], res))
+            continue
         if m.sid in known:
             p = known[m.sid]
         elif m.kind == "tradicional" and m.config == a5:
@@ -282,7 +293,7 @@ def _model_probabilities(image: np.ndarray, out: PipelineOut) -> list[ModelProba
     config = PipelineConfig.from_dict(out.config)
     rows = []
     for m in inference.matching(config):
-        if m.kind == "cnn":
+        if m.kind in ("cnn", "regra"):
             p = inference.predict(m, image)
         else:
             p = inference.predict_traditional(m, out.features)

@@ -45,7 +45,7 @@ def test_scenarios_cover_every_planned_id():
         + [f"L{i}" for i in range(1, 6)]
         + [f"T{i}" for i in range(1, 6)]
         + [f"S{i}" for i in range(1, 5)]
-        + [f"C{i}" for i in range(1, 8)]
+        + [f"C{i}" for i in range(1, 9)]
         + [f"V{i}" for i in range(1, 6)]
     )
     assert sorted(SCENARIOS) == sorted(expected)

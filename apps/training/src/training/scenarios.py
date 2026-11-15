@@ -21,6 +21,7 @@ Kind = Literal[
     "vignette_split",  # V2
     "gradcam",  # V4
     "synthetic_vignette",  # V5
+    "rule",  # C8: regra ABCD (TDS), 100% PDI, sem aprendizado
 ]
 CnnInput = Literal["raw", "preprocessed", "lesion"]
 
@@ -32,7 +33,7 @@ class Scenario:
     description: str
     pipeline: PipelineConfig | None  # pipeline de PDI usado (None em V1, V2, V4, V5)
     kind: Kind = "ablation"
-    model: str | None = "rf"  # rf, svm, cnn
+    model: str | None = "rf"  # rf, svm, cnn, tds
     feature_groups: tuple[str, ...] | None = None  # None = todas as características
     cnn_input: CnnInput | None = None
     depends: tuple[str, ...] = ()  # cenários cujos modelos/predições são usados
@@ -154,6 +155,15 @@ _MODEL_SCENARIOS: tuple[Scenario, ...] = (
         "cnn",
         cnn_input="preprocessed",
         estimate="≈ 12 min (GPU)",
+    ),
+    Scenario(
+        "C8",
+        "C",
+        "Regra ABCD da dermatoscopia (TDS), 100% PDI, sem aprendizado",
+        _FULL,
+        kind="rule",
+        model="tds",
+        estimate="≈ 5 min",
     ),
 )
 
