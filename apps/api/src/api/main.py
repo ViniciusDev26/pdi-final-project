@@ -6,7 +6,7 @@ from typing import Annotated, Any
 
 import numpy as np
 from fastapi import FastAPI, Form, HTTPException, Request, UploadFile
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from PIL import UnidentifiedImageError
 from pydantic import BaseModel
 
@@ -24,6 +24,7 @@ from pdi import (
 )
 from pdi import features as pdi_features
 from pdi.visualize import overlay_contour, overlay_heatmap
+from training import config as cfg
 from training import inference
 from training.compare import MAX_COMBINATIONS, Combination, compare, figure
 from training.scenarios import SCENARIOS
@@ -263,6 +264,22 @@ def _model_probabilities(image: np.ndarray, out: PipelineOut) -> list[ModelProba
 @app.get("/health")
 def health() -> dict[str, Any]:
     return {"status": "ok", "model": triage_predictor().name, "read_only": read_only()}
+
+
+PRESENTATION_FILE = "PDI_Etapa2_Apresentacao.pdf"
+
+
+@app.get("/presentation.pdf")
+def presentation() -> Response:
+    """Slides da apresentação da Etapa 2 (exportados do deck, em docs/)."""
+    path = cfg.REPO_ROOT / "docs" / PRESENTATION_FILE
+    if not path.exists():
+        raise HTTPException(status_code=404, detail="Apresentação não encontrada")
+    return Response(
+        path.read_bytes(),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{PRESENTATION_FILE}"'},
+    )
 
 
 @app.post("/predict")

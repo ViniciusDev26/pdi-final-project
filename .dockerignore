@@ -10,3 +10,4 @@ runs
 *.pdf
 results
 experiments
+!docs/PDI_Etapa2_Apresentacao.pdf

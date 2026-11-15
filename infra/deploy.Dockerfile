@@ -26,6 +26,7 @@ COPY packages/ packages/
 RUN uv sync --frozen --no-dev --package api
 
 COPY experiments/ experiments/
+COPY docs/PDI_Etapa2_Apresentacao.pdf docs/
 COPY results/ results/
 # falha o build se os modelos vierem como ponteiros do Git LFS (clone sem `git lfs pull`)
 RUN python -c "import pathlib,sys; s=pathlib.Path('results/C6/model.pt').stat().st_size; sys.exit(0 if s > 1_000_000 else 'results/C6/model.pt é ponteiro do LFS: ative o Git LFS no clone')"

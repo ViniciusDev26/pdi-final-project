@@ -143,3 +143,8 @@ class ApiClient:
 
     def dataset_image(self, path: str) -> bytes:
         return self._get("/dataset/image", path=path).content
+
+    # ------------------------------------------------------------ apresentação
+
+    def presentation(self) -> bytes:
+        return self._get("/presentation.pdf").content

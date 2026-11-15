@@ -12,3 +12,4 @@ results/_cache
 results/_fila.json
 results/*/log.txt
 results/*/status.json
+!docs/PDI_Etapa2_Apresentacao.pdf

@@ -41,6 +41,13 @@ def test_health():
     assert client.get("/health").json() == {"status": "ok", "model": "dummy", "read_only": False}
 
 
+def test_presentation_pdf_is_served():
+    resp = client.get("/presentation.pdf")
+    assert resp.status_code == 200
+    assert resp.headers["content-type"] == "application/pdf"
+    assert resp.content.startswith(b"%PDF")
+
+
 def test_read_only_blocks_writes_but_allows_analysis(monkeypatch):
     monkeypatch.setenv("PDI_READ_ONLY", "1")
     assert client.get("/health").json()["read_only"] is True

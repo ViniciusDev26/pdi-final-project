@@ -6,6 +6,7 @@ com a API por HTTP.
 
 from pathlib import Path
 
+import httpx
 import streamlit as st
 
 from web.common import get_client
@@ -22,6 +23,27 @@ with st.sidebar:
         st.success(f"API online · modelo: {status['model']}")
         if status.get("read_only"):
             st.info("Modo leitura: executar cenários, anotar e gerar figuras estão desativados.")
+
+
+@st.cache_data(ttl=3600, show_spinner=False)
+def presentation_pdf() -> bytes | None:
+    try:
+        return get_client().presentation()
+    except httpx.HTTPError:
+        return None
+
+
+with st.sidebar:
+    pdf = presentation_pdf() if status is not None else None
+    if pdf:
+        st.download_button(
+            "Baixar apresentação (PDF)",
+            pdf,
+            file_name="PDI_Etapa2_Apresentacao.pdf",
+            mime="application/pdf",
+            icon=":material/slideshow:",
+            width="stretch",
+        )
 
 nav = st.navigation(
     {

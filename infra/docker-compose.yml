@@ -19,6 +19,7 @@ services:
       - ../models:/app/models
       - ../results:/app/results
       - ../experiments:/app/experiments
+      - ../docs:/app/docs:ro
     environment:
       PDI_MODELS_DIR: /app/models
       PDI_GIT_COMMIT: ${PDI_GIT_COMMIT:-desconhecido}
