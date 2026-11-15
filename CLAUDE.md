@@ -76,7 +76,6 @@ Resultados oficiais (commit `6ee6538`, Docker com GPU) versionados em `results/<
   ocupa 21% da imagem em média).
 
 Próximo:
-- Equipe: anotar a causa provável dos 18 erros do C6 (Resultados → Saídas visuais).
 - **M6:** tag `etapa2-entrega` e release, vídeo do plano B, zip para o AVA (formato a
   confirmar). **M7:** slides e ensaios.
 

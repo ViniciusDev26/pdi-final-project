@@ -542,8 +542,7 @@ Grad-CAM), e não só um rótulo.
       ver resultados e anotar (seção 7.1); nenhuma depende só do terminal
 - [x] Modelo da Triagem escolhido pela regra da seção 2 e registrado no histórico
 - [x] Tabela de impacto por etapa (local / segmentação / final) com IC 95%
-- [ ] Saídas visuais da seção 5.6 geradas, incluindo a análise de erros anotada (geradas;
-      falta a equipe anotar a causa dos 18 erros na aba Saídas visuais)
+- [x] Saídas visuais da seção 5.6 geradas, incluindo a análise de erros anotada
 - [ ] Protótipo rodando com a página interativa + vídeo de plano B gravado
 - [x] Modo leitura testado numa máquina sem GPU e sem dataset, só com o README (seção 7.3;
       clone limpo, Docker só com CPU, sem `data/`, em 2026-11-15)

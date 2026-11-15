@@ -1,0 +1,19 @@
+path,causa,nota,atualizado_em
+test/benign/melanoma_10007.jpg,vinheta,"Campo circular com cantos escuros, não detectado pela P1; régua na parte inferior.",2026-11-15T18:18:02+00:00
+test/benign/melanoma_10021.jpg,outra,Imagem fora do padrão: dobra de pele e luva azul ao fundo; a segmentação pegou a dobra inteira.,2026-11-15T18:18:02+00:00
+test/benign/melanoma_10094.jpg,régua ou marcação,"Marcação de caneta azul ao lado da lesão, com parte do Grad-CAM sobre ela; também tem vinheta.",2026-11-15T18:18:02+00:00
+test/benign/melanoma_10102.jpg,lesão atípica,Rede pigmentar irregular e borda recortada.,2026-11-15T18:18:02+00:00
+test/benign/melanoma_9671.jpg,iluminação ou cor,Pele inteira muito pigmentada; a segmentação falhou e o Grad-CAM ficou fora da lesão.,2026-11-15T18:18:02+00:00
+test/benign/melanoma_9784.jpg,vinheta,"Campo circular com cantos escuros, não detectado pela P1; lesão de baixo contraste.",2026-11-15T18:18:02+00:00
+test/benign/melanoma_9831.jpg,lesão atípica,Lesão irregular com várias cores e pontos; parece maligna pelos critérios ABCD.,2026-11-15T18:18:02+00:00
+test/benign/melanoma_9891.jpg,lesão atípica,"Lesão grande, escura e com pontos; aparência de melanoma.",2026-11-15T18:18:02+00:00
+test/malignant/melanoma_10137.jpg,lesão atípica,"Lesão pequena e compacta, de aspecto benigno, sobre pele morena.",2026-11-15T18:18:02+00:00
+test/malignant/melanoma_10142.jpg,iluminação ou cor,"Tonalidade avermelhada e borda difusa; Grad-CAM fora da lesão, na borda esquerda.",2026-11-15T18:18:02+00:00
+test/malignant/melanoma_10146.jpg,reflexo ou bolha,Bolha de ar sobre a lesão; segmentação pegou a borda da bolha.,2026-11-15T18:18:02+00:00
+test/malignant/melanoma_10147.jpg,pelos,Pelos grossos atravessando a lesão.,2026-11-15T18:18:02+00:00
+test/malignant/melanoma_10151.jpg,outra,"Rede pigmentar irregular visível, mas sem vinheta; coerente com a dependência do atalho da vinheta (V2).",2026-11-15T18:18:02+00:00
+test/malignant/melanoma_10582.jpg,baixo contraste,Lesão rosada e alongada com pouco contraste com a pele.,2026-11-15T18:18:02+00:00
+test/malignant/melanoma_10587.jpg,lesão atípica,"Aspecto de nevo regular: borda bem definida, cor homogênea, sem vinheta; Grad-CAM sem ativação.",2026-11-15T18:18:02+00:00
+test/malignant/melanoma_10597.jpg,lesão atípica,"Oval e regular, parece nevo; Grad-CAM na parte inferior, fora da lesão.",2026-11-15T18:18:02+00:00
+test/malignant/melanoma_10602.jpg,baixo contraste,"Lesão difusa e clara, quase da cor da pele; régua à esquerda.",2026-11-15T18:18:02+00:00
+test/malignant/melanoma_10604.jpg,lesão atípica,Lesão pequena com duas manchas; Grad-CAM concentrado nas bordas da imagem.,2026-11-15T18:18:02+00:00
