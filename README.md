@@ -7,17 +7,24 @@ técnicas tradicionais de PDI com redes neurais. A proposta completa está em
 
 ## Como avaliar em 3 comandos (modo leitura)
 
-Não precisa de GPU nem do dataset: os modelos treinados e os resultados oficiais já vêm
-junto. Só precisa do [Docker](https://docs.docker.com/get-docker/).
+Não precisa de GPU nem do dataset: os modelos treinados e os resultados oficiais estão no
+repositório. Precisa do [Docker](https://docs.docker.com/get-docker/), do Git e do
+[Git LFS](https://git-lfs.com), que baixa os modelos.
 
-**Pelo pacote .zip (entrega no AVA):** descompacte, entre na pasta e rode
+**Pelo pacote .zip (entrega no AVA):** o pacote não traz os modelos treinados, só as
+referências do Git LFS. Descompacte, entre na pasta e rode
 
 ```sh
+git lfs install
+git lfs pull
 docker compose -f infra/docker-compose.yml up --build
 ```
 
-**Pelo Git:** os modelos ficam no [Git LFS](https://git-lfs.com), então rode `git lfs install`
-antes de clonar o repositório; depois, o mesmo `docker compose` acima.
+**Pelo Git:** rode `git lfs install` antes de clonar o repositório; depois, o mesmo
+`docker compose` acima.
+
+Sem os modelos (sem o `git lfs pull`), o sistema sobe do mesmo jeito: Resultados, Base de dados
+e Simulador funcionam, mas a Triagem usa um modelo de demonstração, sem valor diagnóstico.
 
 Depois abra http://localhost:8501. A primeira construção baixa as dependências e leva
 alguns minutos.
