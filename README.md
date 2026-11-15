@@ -112,7 +112,7 @@ Ti via Docker): `metrics.json` com as métricas e IC 95%, `predictions.csv`, `hi
 
 O modelo da Triagem, pela regra do plano (maior AUC na validação), é o **C6**. A página
 **Resultados** mostra todos os cenários, o impacto por etapa e a análise de viés. Na
-segmentação, a padrão (S3: Otsu + morfologia + componente central) tem Dice 0,70 no teste. As
+segmentação (S1–S4, executados no commit `cbaeb6a`), a padrão (S3: Otsu + morfologia + componente central) tem Dice 0,70 no teste. As
 máscaras de referência foram desenhadas por IA a pedido da equipe, não por dermatologista
 (plano, seção 5.8).
 

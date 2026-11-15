@@ -1,0 +1,471 @@
+{
+  "id": "S1",
+  "grupo": "S",
+  "descricao": "Otsu global, sem pós-processamento",
+  "tipo": "segmentation",
+  "configuracao": {
+    "vignette": "fill",
+    "hair": "dullrazor",
+    "color": "shades_of_gray",
+    "contrast": "clahe",
+    "denoise": "median",
+    "segmentation": "otsu",
+    "seg_postprocess": false
+  },
+  "grupos_caracteristicas": null,
+  "commit": "cbaeb6a",
+  "ambiente": {
+    "python": "3.12.16",
+    "plataforma": "Linux-7.2.15-1-omarchy-x86_64-with-glibc2.41",
+    "numpy": "2.5.4",
+    "opencv": "5.0.0",
+    "scikit-learn": "1.9.1",
+    "torch": "2.14.1+cu130",
+    "cuda": "13.0",
+    "gpu": "NVIDIA GeForce RTX 4060 Ti",
+    "driver": "615.78.08"
+  },
+  "iniciado_em": "2026-11-15T17:50:48+00:00",
+  "finalizado_em": "2026-11-15T17:50:49+00:00",
+  "duracao_s": 1.6,
+  "segmentacao": {
+    "val": {
+      "n": 20,
+      "dice": {
+        "valor": 0.4667042945901989,
+        "ic95": [
+          0.32720039585978783,
+          0.5947597087890536
+        ]
+      },
+      "iou": {
+        "valor": 0.3567514770191164,
+        "ic95": [
+          0.23239003499720146,
+          0.4748866183397605
+        ]
+      },
+      "por_imagem": [
+        {
+          "path": "train/benign/melanoma_2129.jpg",
+          "dice": 0.047264045217560786,
+          "iou": 0.02420401237648468
+        },
+        {
+          "path": "train/malignant/melanoma_8034.jpg",
+          "dice": 0.7849990553561308,
+          "iou": 0.646089255170269
+        },
+        {
+          "path": "train/malignant/melanoma_9336.jpg",
+          "dice": 0.6485665378118871,
+          "iou": 0.4799100776754408
+        },
+        {
+          "path": "train/benign/melanoma_3876.jpg",
+          "dice": 0.26902402694126026,
+          "iou": 0.1554175396587848
+        },
+        {
+          "path": "train/benign/melanoma_4555.jpg",
+          "dice": 0.7685594534075902,
+          "iou": 0.6241141365162253
+        },
+        {
+          "path": "train/benign/melanoma_1789.jpg",
+          "dice": 0.1675549633577615,
+          "iou": 0.09143792037811307
+        },
+        {
+          "path": "train/malignant/melanoma_5718.jpg",
+          "dice": 0.8732478377572324,
+          "iou": 0.7750132345156168
+        },
+        {
+          "path": "train/benign/melanoma_987.jpg",
+          "dice": 0.2916642958748222,
+          "iou": 0.1707300826005862
+        },
+        {
+          "path": "train/malignant/melanoma_6501.jpg",
+          "dice": 0.27537421346777663,
+          "iou": 0.1596718636693256
+        },
+        {
+          "path": "train/malignant/melanoma_5598.jpg",
+          "dice": 0.21984517945109078,
+          "iou": 0.1234977862112587
+        },
+        {
+          "path": "train/malignant/melanoma_7041.jpg",
+          "dice": 0.8196954972465177,
+          "iou": 0.6944779888022835
+        },
+        {
+          "path": "train/benign/melanoma_1767.jpg",
+          "dice": 0.1332551319648094,
+          "iou": 0.07138368731934146
+        },
+        {
+          "path": "train/benign/melanoma_3502.jpg",
+          "dice": 0.7184694793536804,
+          "iou": 0.5606339199719814
+        },
+        {
+          "path": "train/malignant/melanoma_8349.jpg",
+          "dice": 0.8410612638687892,
+          "iou": 0.7257167593486731
+        },
+        {
+          "path": "train/benign/melanoma_3436.jpg",
+          "dice": 0.5232288037166086,
+          "iou": 0.35430593786865905
+        },
+        {
+          "path": "train/malignant/melanoma_7977.jpg",
+          "dice": 0.0,
+          "iou": 0.0
+        },
+        {
+          "path": "train/benign/melanoma_3154.jpg",
+          "dice": 0.1719636600415491,
+          "iou": 0.09407015401316236
+        },
+        {
+          "path": "train/malignant/melanoma_7770.jpg",
+          "dice": 0.8818720045108542,
+          "iou": 0.7887039838628341
+        },
+        {
+          "path": "train/malignant/melanoma_6629.jpg",
+          "dice": 0.5721252316395201,
+          "iou": 0.4006830601092896
+        },
+        {
+          "path": "train/benign/melanoma_23.jpg",
+          "dice": 0.32631521081853665,
+          "iou": 0.19496814031399856
+        }
+      ]
+    },
+    "teste": {
+      "n": 60,
+      "dice": {
+        "valor": 0.5418686000630241,
+        "ic95": [
+          0.47680763125753967,
+          0.6080296637380542
+        ]
+      },
+      "iou": {
+        "valor": 0.41947049666913144,
+        "ic95": [
+          0.358126039009268,
+          0.48015763025438035
+        ]
+      },
+      "por_imagem": [
+        {
+          "path": "test/benign/melanoma_9658.jpg",
+          "dice": 0.0,
+          "iou": 0.0
+        },
+        {
+          "path": "test/benign/melanoma_10073.jpg",
+          "dice": 0.32871652816251157,
+          "iou": 0.19668508287292819
+        },
+        {
+          "path": "test/malignant/melanoma_10369.jpg",
+          "dice": 0.5541209591301816,
+          "iou": 0.3832415737881026
+        },
+        {
+          "path": "test/malignant/melanoma_10215.jpg",
+          "dice": 0.7905286818363765,
+          "iou": 0.6536150712830957
+        },
+        {
+          "path": "test/benign/melanoma_10009.jpg",
+          "dice": 0.2032618825722274,
+          "iou": 0.11312827428808549
+        },
+        {
+          "path": "test/malignant/melanoma_10225.jpg",
+          "dice": 0.6652020866024853,
+          "iou": 0.4983541552813187
+        },
+        {
+          "path": "test/malignant/melanoma_10365.jpg",
+          "dice": 0.7760091184215698,
+          "iou": 0.6339991008926851
+        },
+        {
+          "path": "test/malignant/melanoma_10397.jpg",
+          "dice": 0.843864406779661,
+          "iou": 0.7299008972028382
+        },
+        {
+          "path": "test/benign/melanoma_9823.jpg",
+          "dice": 0.13638582446548864,
+          "iou": 0.07318350882707318
+        },
+        {
+          "path": "test/malignant/melanoma_10139.jpg",
+          "dice": 0.7843137254901961,
+          "iou": 0.6451612903225806
+        },
+        {
+          "path": "test/malignant/melanoma_10569.jpg",
+          "dice": 0.24776604386677498,
+          "iou": 0.14140009272137227
+        },
+        {
+          "path": "test/malignant/melanoma_10292.jpg",
+          "dice": 0.8465723121374236,
+          "iou": 0.7339621903009903
+        },
+        {
+          "path": "test/malignant/melanoma_10191.jpg",
+          "dice": 0.39624615027020743,
+          "iou": 0.2470741693539621
+        },
+        {
+          "path": "test/benign/melanoma_9708.jpg",
+          "dice": 0.49312151522792863,
+          "iou": 0.32724703432375146
+        },
+        {
+          "path": "test/malignant/melanoma_10281.jpg",
+          "dice": 0.8305752927631962,
+          "iou": 0.7102426412092283
+        },
+        {
+          "path": "test/benign/melanoma_9694.jpg",
+          "dice": 0.21800498910606586,
+          "iou": 0.12233759790197399
+        },
+        {
+          "path": "test/benign/melanoma_9836.jpg",
+          "dice": 0.8179455614826973,
+          "iou": 0.6919694515158528
+        },
+        {
+          "path": "test/benign/melanoma_9813.jpg",
+          "dice": 0.6326504837202254,
+          "iou": 0.4626838099460578
+        },
+        {
+          "path": "test/malignant/melanoma_10506.jpg",
+          "dice": 0.6546297980716754,
+          "iou": 0.486579676830505
+        },
+        {
+          "path": "test/benign/melanoma_9959.jpg",
+          "dice": 0.17861521584822868,
+          "iou": 0.09806561326436619
+        },
+        {
+          "path": "test/malignant/melanoma_10521.jpg",
+          "dice": 0.6417941383741658,
+          "iou": 0.4725308265169088
+        },
+        {
+          "path": "test/benign/melanoma_9792.jpg",
+          "dice": 0.15966026693312396,
+          "iou": 0.08675586581345744
+        },
+        {
+          "path": "test/malignant/melanoma_10497.jpg",
+          "dice": 0.7342817294281729,
+          "iou": 0.5801304654442877
+        },
+        {
+          "path": "test/malignant/melanoma_10591.jpg",
+          "dice": 0.38912935185697684,
+          "iou": 0.2415646174356437
+        },
+        {
+          "path": "test/benign/melanoma_9790.jpg",
+          "dice": 0.06010016694490818,
+          "iou": 0.03098106712564544
+        },
+        {
+          "path": "test/malignant/melanoma_10585.jpg",
+          "dice": 0.4966034388921365,
+          "iou": 0.3303209889785739
+        },
+        {
+          "path": "test/benign/melanoma_9701.jpg",
+          "dice": 0.8514595293927387,
+          "iou": 0.741340467473951
+        },
+        {
+          "path": "test/benign/melanoma_10072.jpg",
+          "dice": 0.02657109759629308,
+          "iou": 0.013464431155299557
+        },
+        {
+          "path": "test/benign/melanoma_9706.jpg",
+          "dice": 0.676433442788583,
+          "iou": 0.5110687022900763
+        },
+        {
+          "path": "test/malignant/melanoma_10485.jpg",
+          "dice": 0.45699876602822037,
+          "iou": 0.29617524339360224
+        },
+        {
+          "path": "test/benign/melanoma_9994.jpg",
+          "dice": 0.36279526179294874,
+          "iou": 0.22159431458172787
+        },
+        {
+          "path": "test/benign/melanoma_9753.jpg",
+          "dice": 0.578141611737189,
+          "iou": 0.4066098399880365
+        },
+        {
+          "path": "test/benign/melanoma_9934.jpg",
+          "dice": 0.5828949755124252,
+          "iou": 0.411328
+        },
+        {
+          "path": "test/malignant/melanoma_10338.jpg",
+          "dice": 0.8640220785409953,
+          "iou": 0.7605975980864839
+        },
+        {
+          "path": "test/benign/melanoma_10055.jpg",
+          "dice": 0.841830590124448,
+          "iou": 0.7268630849220103
+        },
+        {
+          "path": "test/malignant/melanoma_10311.jpg",
+          "dice": 0.9028749028749029,
+          "iou": 0.8229461756373938
+        },
+        {
+          "path": "test/malignant/melanoma_10114.jpg",
+          "dice": 0.8493515358361775,
+          "iou": 0.7381503233078246
+        },
+        {
+          "path": "test/malignant/melanoma_10231.jpg",
+          "dice": 0.8879596977329974,
+          "iou": 0.7984959681072755
+        },
+        {
+          "path": "test/malignant/melanoma_10431.jpg",
+          "dice": 0.8047637040457898,
+          "iou": 0.6733092918696141
+        },
+        {
+          "path": "test/benign/melanoma_10093.jpg",
+          "dice": 0.817989417989418,
+          "iou": 0.6920322291853178
+        },
+        {
+          "path": "test/malignant/melanoma_10412.jpg",
+          "dice": 0.5584266934896466,
+          "iou": 0.387373081179924
+        },
+        {
+          "path": "test/benign/melanoma_9991.jpg",
+          "dice": 0.02538479753729576,
+          "iou": 0.012855566748213173
+        },
+        {
+          "path": "test/benign/melanoma_10030.jpg",
+          "dice": 0.24427967065459674,
+          "iou": 0.13913358897295056
+        },
+        {
+          "path": "test/benign/melanoma_10094.jpg",
+          "dice": 0.3009609486812513,
+          "iou": 0.17713598074608905
+        },
+        {
+          "path": "test/malignant/melanoma_10154.jpg",
+          "dice": 0.6174159504113188,
+          "iou": 0.44656666666666667
+        },
+        {
+          "path": "test/malignant/melanoma_10463.jpg",
+          "dice": 0.7879424831605599,
+          "iou": 0.6500867097587892
+        },
+        {
+          "path": "test/malignant/melanoma_10169.jpg",
+          "dice": 0.8023152604668025,
+          "iou": 0.6698885223998998
+        },
+        {
+          "path": "test/benign/melanoma_9989.jpg",
+          "dice": 0.6586938241614501,
+          "iou": 0.4910838673725272
+        },
+        {
+          "path": "test/malignant/melanoma_10332.jpg",
+          "dice": 0.9691436612168319,
+          "iou": 0.9401345510091326
+        },
+        {
+          "path": "test/benign/melanoma_9656.jpg",
+          "dice": 0.400870050850945,
+          "iou": 0.25068009705168737
+        },
+        {
+          "path": "test/benign/melanoma_9638.jpg",
+          "dice": 0.7164104037936485,
+          "iou": 0.5581304226140498
+        },
+        {
+          "path": "test/benign/melanoma_10102.jpg",
+          "dice": 0.4725698294524526,
+          "iou": 0.30938882743362833
+        },
+        {
+          "path": "test/malignant/melanoma_10489.jpg",
+          "dice": 0.8502665984953619,
+          "iou": 0.7395337017978527
+        },
+        {
+          "path": "test/benign/melanoma_9953.jpg",
+          "dice": 0.09267166762839008,
+          "iou": 0.04858716040418709
+        },
+        {
+          "path": "test/benign/melanoma_9677.jpg",
+          "dice": 0.31164461419542583,
+          "iou": 0.18458472476570073
+        },
+        {
+          "path": "test/malignant/melanoma_10473.jpg",
+          "dice": 0.6402689386163005,
+          "iou": 0.47087910013965956
+        },
+        {
+          "path": "test/benign/melanoma_9605.jpg",
+          "dice": 0.29501349768247337,
+          "iou": 0.17302981418414293
+        },
+        {
+          "path": "test/benign/melanoma_10063.jpg",
+          "dice": 0.20937948350071736,
+          "iou": 0.11693124342731233
+        },
+        {
+          "path": "test/malignant/melanoma_10501.jpg",
+          "dice": 0.37387443650856733,
+          "iou": 0.22991732305457796
+        },
+        {
+          "path": "test/malignant/melanoma_10194.jpg",
+          "dice": 0.8003969128996692,
+          "iou": 0.6672181169809933
+        }
+      ]
+    }
+  }
+}

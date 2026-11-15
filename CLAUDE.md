@@ -63,7 +63,7 @@ Resultados oficiais (commit `6ee6538`, Docker com GPU) versionados em `results/<
 - Modelo da Triagem pela regra da seção 2: **C6** (AUC val 0,989, limiar 0,933).
 - V1: vinheta sozinha dá AUC 0,70. V5: vinheta artificial em 50 benignas faz 46 virarem
   malignas no C6 e 31 no C7; no RF com P1 (C2) a variação é ≈ 0.
-- Segmentação (Dice no teste, 60 máscaras): S3 (Otsu + morfologia, padrão) 0,70, S4 0,55,
+- Segmentação (S1–S4 e V4 executados no commit `cbaeb6a`; Dice no teste, 60 máscaras): S3 (Otsu + morfologia, padrão) 0,70, S4 0,55,
   S1 0,54, S2 0,34. V4: fração do Grad-CAM dentro da lesão 0,40 no C6 e 0,56 no C7 (a lesão
   ocupa 21% da imagem em média).
 
