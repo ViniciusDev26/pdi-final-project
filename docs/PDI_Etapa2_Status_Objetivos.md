@@ -77,6 +77,10 @@ Objetivo geral (protótipo que segmenta e classifica, comparando PDI tradicional
 - **Análise de erros** (10 FN e 8 FP do C6, causa anotada): lesões de aspecto atípico ou
   enganoso, baixo contraste, campo circular escuro não detectado, marcação de caneta, bolha.
 - Réguas e marcações: só qualitativas, como previsto no plano.
+- **Sensibilidade por grupo de imagens** (exploratória, feita depois de ver o teste): os 100
+  melanomas do início e do fim da pasta de teste, com pouca vinheta, são detectados em só 38%
+  pelo C6, contra 99,8% nos outros 400; o RF (C2) faz 67% × 96%. A especificidade é igual nos
+  dois grupos. A sensibilidade de 87% da CNN esconde essa diferença.
 
 ### 6. Protótipo — cumprido
 
