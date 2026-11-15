@@ -67,10 +67,13 @@ class JobQueue:
 
     def _save(self) -> None:
         path = self._file()
-        path.parent.mkdir(parents=True, exist_ok=True)
-        tmp = path.with_suffix(".tmp")
-        tmp.write_text(json.dumps({"fila": list(self._queue), "executando": self._running}))
-        tmp.replace(path)
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            tmp = path.with_suffix(".tmp")
+            tmp.write_text(json.dumps({"fila": list(self._queue), "executando": self._running}))
+            tmp.replace(path)
+        except OSError as exc:  # modo leitura com results/ sem permissão de escrita
+            print(f"fila não persistida: {exc}", file=sys.stderr)
 
     # ------------------------------------------------------------ ciclo de vida
 

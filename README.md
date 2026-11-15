@@ -5,6 +5,30 @@ Classifica lesões de pele como benignas ou malignas (melanoma), comparando
 técnicas tradicionais de PDI com redes neurais. A proposta completa está em
 [`docs/PDI_Etapa1_Equipe_e_Proposta.pdf`](docs/PDI_Etapa1_Equipe_e_Proposta.pdf).
 
+## Como avaliar em 3 comandos (modo leitura)
+
+Não precisa de GPU nem do dataset: os modelos treinados e os resultados oficiais estão no
+repositório (modelos no [Git LFS](https://git-lfs.com)). Precisa de Git, Git LFS e Docker.
+
+```sh
+git lfs install
+git clone https://github.com/ViniciusDev26/pdi-final-project.git && cd pdi-final-project
+docker compose -f infra/docker-compose.yml up --build
+```
+
+Depois abra http://localhost:8501. A primeira construção baixa as dependências e leva
+alguns minutos.
+
+| Página | O que dá para ver sem o dataset |
+|---|---|
+| **Triagem** | envie uma imagem dermatoscópica: probabilidade do modelo C6, Grad-CAM, lesão segmentada, indicadores ABCD e recomendação |
+| **Simulador** | envie uma imagem e compare combinações de técnicas etapa a etapa; quando a combinação é a de um cenário treinado, mostra a probabilidade de cada modelo |
+| **Resultados** | todos os cenários com IC 95%, impacto por etapa, modelos, segmentação, viés e as saídas visuais (análise de erros, segmentação, grades do simulador) |
+| **Base de dados** | classes por divisão, duplicatas e prevalência da vinheta (as imagens exigem o dataset) |
+| **Experimentos** / **Anotação** | estado dos cenários e máscaras salvas; executar cenários e anotar exigem o dataset |
+
+Para refazer tudo (modo completo), veja [Setup](#setup) e [Experimentos](#experimentos).
+
 ## Entregas
 
 | Etapa | Documento | Apresentação | Enunciado |
@@ -20,13 +44,15 @@ edite o texto no script e rode `just docs-etapa1`.
 apps/
   api/        FastAPI: pipeline, simulador, anotação, fila de cenários, resultados
   training/   cenários congelados, treino (RF, SVM, CNN), avaliação e relatório
-  web/        sistema web Streamlit (Triagem, Simulador, Experimentos, Resultados, Anotação)
+  web/        sistema web Streamlit (Triagem, Simulador, Experimentos, Resultados, Base de
+              dados, Anotação)
 packages/
   pdi/        biblioteca de PDI compartilhada (P0–P5, segmentação, características, artefatos)
 infra/        Dockerfile, docker-compose (CPU) e override com GPU
-experiments/  listas fixas de IDs e máscaras anotadas (versionadas)
+experiments/  listas fixas de IDs, máscaras de referência e anotação dos erros (versionadas)
 data/         dataset e splits locais (fora do git)
-results/      resultados oficiais por cenário: métricas, predições e modelos (Git LFS)
+results/      resultados oficiais por cenário (métricas, predições, modelos no Git LFS) e
+              saídas visuais da seção 5.6 em results/visuais/
 models/       modelos exportados (fora do git)
 docs/         documentos das etapas e plano experimental
 ```
@@ -112,9 +138,11 @@ Ti via Docker): `metrics.json` com as métricas e IC 95%, `predictions.csv`, `hi
 
 O modelo da Triagem, pela regra do plano (maior AUC na validação), é o **C6**. A página
 **Resultados** mostra todos os cenários, o impacto por etapa e a análise de viés. Na
-segmentação (S1–S4, executados no commit `cbaeb6a`), a padrão (S3: Otsu + morfologia + componente central) tem Dice 0,70 no teste. As
-máscaras de referência foram desenhadas por IA a pedido da equipe, não por dermatologista
-(plano, seção 5.8).
+segmentação (S1–S4, executados no commit `cbaeb6a`), a padrão (S3: Otsu + morfologia +
+componente central) tem Dice 0,70 no teste. As máscaras de referência foram desenhadas por
+IA a pedido da equipe, não por dermatologista (plano, seção 5.8). As saídas visuais
+(`results/visuais/`, botão "Gerar de novo" na aba Saídas visuais) precisam do dataset para
+serem refeitas, mas ficam versionadas para o modo leitura.
 
 **Números oficiais só do servidor de experimentos** (Linux, RTX 4060 Ti), via
 `just up-gpu`. A GPU é repassada ao contêiner por CDI (`nvidia-ctk cdi generate`). Em
@@ -123,7 +151,9 @@ CPU.
 
 ## Contrato entre treino e API
 
-A API depende apenas do protocolo `Predictor` (`apps/api/src/api/predictor.py`).
-Enquanto não houver modelo treinado, ela usa o `DummyPredictor`, **sem valor
-diagnóstico**, para que front e API possam ser desenvolvidos em paralelo.
-Os modelos treinados serão exportados para `models/` (fora do git).
+A API depende apenas do protocolo `Predictor` (`apps/api/src/api/predictor.py`). A
+Triagem usa o modelo escolhido pela regra do plano (cenário C com maior AUC na validação,
+hoje o C6), carregado de `results/<ID>/`. Se os modelos não estiverem presentes (clone sem
+Git LFS), a API cai no `DummyPredictor`, **sem valor diagnóstico**, e a página avisa. O
+Simulador usa `training.inference`: cada modelo só é aplicado à combinação de técnicas com
+que foi treinado.

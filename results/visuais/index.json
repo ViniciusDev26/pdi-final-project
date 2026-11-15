@@ -1,0 +1,430 @@
+{
+  "gerado_em": "2026-11-15T18:13:26+00:00",
+  "commit": "7a031d6",
+  "segmentacao": {
+    "cenario": "S3",
+    "figuras": {
+      "segmentacao_melhores": "segmentacao_melhores.png",
+      "segmentacao_piores": "segmentacao_piores.png"
+    },
+    "dice_por_imagem": [
+      {
+        "path": "test/malignant/melanoma_10332.jpg",
+        "dice": 0.9704656883251619
+      },
+      {
+        "path": "test/benign/melanoma_10055.jpg",
+        "dice": 0.9526190205658448
+      },
+      {
+        "path": "test/malignant/melanoma_10114.jpg",
+        "dice": 0.9486915567200025
+      },
+      {
+        "path": "test/benign/melanoma_10009.jpg",
+        "dice": 0.9450358461872692
+      },
+      {
+        "path": "test/malignant/melanoma_10311.jpg",
+        "dice": 0.9443814705660092
+      },
+      {
+        "path": "test/benign/melanoma_10030.jpg",
+        "dice": 0.9355176019518996
+      },
+      {
+        "path": "test/benign/melanoma_10093.jpg",
+        "dice": 0.93515731874145
+      },
+      {
+        "path": "test/benign/melanoma_9701.jpg",
+        "dice": 0.9329905941461705
+      },
+      {
+        "path": "test/malignant/melanoma_10215.jpg",
+        "dice": 0.931693104564584
+      },
+      {
+        "path": "test/benign/melanoma_9753.jpg",
+        "dice": 0.931145322280494
+      },
+      {
+        "path": "test/benign/melanoma_9605.jpg",
+        "dice": 0.9292831886853102
+      },
+      {
+        "path": "test/malignant/melanoma_10338.jpg",
+        "dice": 0.9189719708404687
+      },
+      {
+        "path": "test/malignant/melanoma_10431.jpg",
+        "dice": 0.9135438260777122
+      },
+      {
+        "path": "test/benign/melanoma_9994.jpg",
+        "dice": 0.9133229112384923
+      },
+      {
+        "path": "test/malignant/melanoma_10231.jpg",
+        "dice": 0.9071795789958309
+      },
+      {
+        "path": "test/malignant/melanoma_10281.jpg",
+        "dice": 0.905739607045771
+      },
+      {
+        "path": "test/benign/melanoma_9706.jpg",
+        "dice": 0.9023569023569024
+      },
+      {
+        "path": "test/benign/melanoma_9677.jpg",
+        "dice": 0.8993041880005251
+      },
+      {
+        "path": "test/benign/melanoma_10063.jpg",
+        "dice": 0.8991710044341623
+      },
+      {
+        "path": "test/malignant/melanoma_10292.jpg",
+        "dice": 0.893988813659111
+      },
+      {
+        "path": "test/malignant/melanoma_10365.jpg",
+        "dice": 0.8891089108910891
+      },
+      {
+        "path": "test/benign/melanoma_9836.jpg",
+        "dice": 0.8815964523281596
+      },
+      {
+        "path": "test/malignant/melanoma_10169.jpg",
+        "dice": 0.8786025750187063
+      },
+      {
+        "path": "test/malignant/melanoma_10463.jpg",
+        "dice": 0.8736683238636364
+      },
+      {
+        "path": "test/malignant/melanoma_10397.jpg",
+        "dice": 0.8634977516668677
+      },
+      {
+        "path": "test/malignant/melanoma_10194.jpg",
+        "dice": 0.8546702602543587
+      },
+      {
+        "path": "test/benign/melanoma_9934.jpg",
+        "dice": 0.8452755905511811
+      },
+      {
+        "path": "test/benign/melanoma_9823.jpg",
+        "dice": 0.8355342136854742
+      },
+      {
+        "path": "test/benign/melanoma_10102.jpg",
+        "dice": 0.8274474551603099
+      },
+      {
+        "path": "test/malignant/melanoma_10139.jpg",
+        "dice": 0.8222770058269834
+      },
+      {
+        "path": "test/benign/melanoma_9989.jpg",
+        "dice": 0.8175343100353234
+      },
+      {
+        "path": "test/malignant/melanoma_10585.jpg",
+        "dice": 0.815890287480282
+      },
+      {
+        "path": "test/benign/melanoma_9708.jpg",
+        "dice": 0.8147066873460451
+      },
+      {
+        "path": "test/benign/melanoma_9638.jpg",
+        "dice": 0.8110078513058805
+      },
+      {
+        "path": "test/benign/melanoma_9656.jpg",
+        "dice": 0.8052619743647402
+      },
+      {
+        "path": "test/benign/melanoma_9694.jpg",
+        "dice": 0.7840642785403414
+      },
+      {
+        "path": "test/benign/melanoma_9953.jpg",
+        "dice": 0.7764298093587522
+      },
+      {
+        "path": "test/benign/melanoma_9813.jpg",
+        "dice": 0.775915541493061
+      },
+      {
+        "path": "test/benign/melanoma_9792.jpg",
+        "dice": 0.7726483859770913
+      },
+      {
+        "path": "test/benign/melanoma_9790.jpg",
+        "dice": 0.7570498915401301
+      },
+      {
+        "path": "test/malignant/melanoma_10497.jpg",
+        "dice": 0.73414703377803
+      },
+      {
+        "path": "test/malignant/melanoma_10521.jpg",
+        "dice": 0.6727139216448533
+      },
+      {
+        "path": "test/malignant/melanoma_10569.jpg",
+        "dice": 0.6596407896689921
+      },
+      {
+        "path": "test/malignant/melanoma_10506.jpg",
+        "dice": 0.6397044894866452
+      },
+      {
+        "path": "test/benign/melanoma_10073.jpg",
+        "dice": 0.6243370654095463
+      },
+      {
+        "path": "test/malignant/melanoma_10225.jpg",
+        "dice": 0.60145959095414
+      },
+      {
+        "path": "test/malignant/melanoma_10154.jpg",
+        "dice": 0.5771425861223973
+      },
+      {
+        "path": "test/benign/melanoma_9991.jpg",
+        "dice": 0.4780578898225957
+      },
+      {
+        "path": "test/benign/melanoma_9959.jpg",
+        "dice": 0.47401633259094283
+      },
+      {
+        "path": "test/malignant/melanoma_10369.jpg",
+        "dice": 0.38873365373868335
+      },
+      {
+        "path": "test/benign/melanoma_10094.jpg",
+        "dice": 0.36122226264096036
+      },
+      {
+        "path": "test/malignant/melanoma_10501.jpg",
+        "dice": 0.3600512789207008
+      },
+      {
+        "path": "test/malignant/melanoma_10591.jpg",
+        "dice": 0.11785615288036655
+      },
+      {
+        "path": "test/malignant/melanoma_10485.jpg",
+        "dice": 0.09923959273102204
+      },
+      {
+        "path": "test/malignant/melanoma_10191.jpg",
+        "dice": 0.09138742730545556
+      },
+      {
+        "path": "test/malignant/melanoma_10473.jpg",
+        "dice": 0.04018482944810758
+      },
+      {
+        "path": "test/malignant/melanoma_10412.jpg",
+        "dice": 0.021017881705639615
+      },
+      {
+        "path": "test/malignant/melanoma_10489.jpg",
+        "dice": 0.009463924801899202
+      },
+      {
+        "path": "test/benign/melanoma_9658.jpg",
+        "dice": 0.0
+      },
+      {
+        "path": "test/benign/melanoma_10072.jpg",
+        "dice": 0.0
+      }
+    ]
+  },
+  "erros": {
+    "modelo": "C6",
+    "figuras": {
+      "erros_fn": "erros_fn.png",
+      "erros_fp": "erros_fp.png"
+    },
+    "casos": [
+      {
+        "path": "test/malignant/melanoma_10587.jpg",
+        "imagem": "melanoma_10587",
+        "tipo": "FN",
+        "y": 1,
+        "p": 1.4738983e-05,
+        "figura": "erros/melanoma_10587.png"
+      },
+      {
+        "path": "test/malignant/melanoma_10602.jpg",
+        "imagem": "melanoma_10602",
+        "tipo": "FN",
+        "y": 1,
+        "p": 1.8777873e-05,
+        "figura": "erros/melanoma_10602.png"
+      },
+      {
+        "path": "test/malignant/melanoma_10137.jpg",
+        "imagem": "melanoma_10137",
+        "tipo": "FN",
+        "y": 1,
+        "p": 9.4612624e-05,
+        "figura": "erros/melanoma_10137.png"
+      },
+      {
+        "path": "test/malignant/melanoma_10142.jpg",
+        "imagem": "melanoma_10142",
+        "tipo": "FN",
+        "y": 1,
+        "p": 0.00041406954,
+        "figura": "erros/melanoma_10142.png"
+      },
+      {
+        "path": "test/malignant/melanoma_10597.jpg",
+        "imagem": "melanoma_10597",
+        "tipo": "FN",
+        "y": 1,
+        "p": 0.00094730896,
+        "figura": "erros/melanoma_10597.png"
+      },
+      {
+        "path": "test/malignant/melanoma_10151.jpg",
+        "imagem": "melanoma_10151",
+        "tipo": "FN",
+        "y": 1,
+        "p": 0.0037507887,
+        "figura": "erros/melanoma_10151.png"
+      },
+      {
+        "path": "test/malignant/melanoma_10147.jpg",
+        "imagem": "melanoma_10147",
+        "tipo": "FN",
+        "y": 1,
+        "p": 0.00402291,
+        "figura": "erros/melanoma_10147.png"
+      },
+      {
+        "path": "test/malignant/melanoma_10604.jpg",
+        "imagem": "melanoma_10604",
+        "tipo": "FN",
+        "y": 1,
+        "p": 0.0042151595,
+        "figura": "erros/melanoma_10604.png"
+      },
+      {
+        "path": "test/malignant/melanoma_10582.jpg",
+        "imagem": "melanoma_10582",
+        "tipo": "FN",
+        "y": 1,
+        "p": 0.005384938,
+        "figura": "erros/melanoma_10582.png"
+      },
+      {
+        "path": "test/malignant/melanoma_10146.jpg",
+        "imagem": "melanoma_10146",
+        "tipo": "FN",
+        "y": 1,
+        "p": 0.00685048,
+        "figura": "erros/melanoma_10146.png"
+      },
+      {
+        "path": "test/benign/melanoma_10021.jpg",
+        "imagem": "melanoma_10021",
+        "tipo": "FP",
+        "y": 0,
+        "p": 0.9999999,
+        "figura": "erros/melanoma_10021.png"
+      },
+      {
+        "path": "test/benign/melanoma_10094.jpg",
+        "imagem": "melanoma_10094",
+        "tipo": "FP",
+        "y": 0,
+        "p": 0.9986853,
+        "figura": "erros/melanoma_10094.png"
+      },
+      {
+        "path": "test/benign/melanoma_9831.jpg",
+        "imagem": "melanoma_9831",
+        "tipo": "FP",
+        "y": 0,
+        "p": 0.997981,
+        "figura": "erros/melanoma_9831.png"
+      },
+      {
+        "path": "test/benign/melanoma_10007.jpg",
+        "imagem": "melanoma_10007",
+        "tipo": "FP",
+        "y": 0,
+        "p": 0.99341017,
+        "figura": "erros/melanoma_10007.png"
+      },
+      {
+        "path": "test/benign/melanoma_9784.jpg",
+        "imagem": "melanoma_9784",
+        "tipo": "FP",
+        "y": 0,
+        "p": 0.9890976,
+        "figura": "erros/melanoma_9784.png"
+      },
+      {
+        "path": "test/benign/melanoma_9891.jpg",
+        "imagem": "melanoma_9891",
+        "tipo": "FP",
+        "y": 0,
+        "p": 0.97702265,
+        "figura": "erros/melanoma_9891.png"
+      },
+      {
+        "path": "test/benign/melanoma_9671.jpg",
+        "imagem": "melanoma_9671",
+        "tipo": "FP",
+        "y": 0,
+        "p": 0.947186,
+        "figura": "erros/melanoma_9671.png"
+      },
+      {
+        "path": "test/benign/melanoma_10102.jpg",
+        "imagem": "melanoma_10102",
+        "tipo": "FP",
+        "y": 0,
+        "p": 0.9361684,
+        "figura": "erros/melanoma_10102.png"
+      }
+    ]
+  },
+  "exemplos": {
+    "presets": [
+      "A0",
+      "A5",
+      "T4",
+      "L1"
+    ],
+    "figuras": {
+      "exemplo_1": "exemplo_1.png",
+      "exemplo_2": "exemplo_2.png",
+      "exemplo_3": "exemplo_3.png",
+      "exemplo_4": "exemplo_4.png",
+      "exemplo_5": "exemplo_5.png",
+      "exemplo_6": "exemplo_6.png"
+    },
+    "imagens": [
+      "train/malignant/melanoma_5143.jpg",
+      "train/benign/melanoma_3835.jpg",
+      "train/benign/melanoma_1104.jpg",
+      "train/malignant/melanoma_6447.jpg",
+      "train/benign/melanoma_3766.jpg",
+      "train/malignant/melanoma_8567.jpg"
+    ]
+  }
+}
