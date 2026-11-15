@@ -501,8 +501,8 @@ carregadas localmente, para o caso de falha de rede, de máquina ou de tempo.
 - Tarefa binária: o protótipo não reconhece outros tipos de lesão (carcinoma
   basocelular, queratoses etc.).
 - Exige imagem dermatoscópica; não funciona com foto comum de celular.
-- Máscaras de referência desenhadas por IA (Claude), sem revisão de dermatologista nem
-  Dice entre anotadores, em 80 imagens (seção 5.8).
+- Máscaras de referência com anotador único, sem revisão de dermatologista nem Dice entre
+  anotadores, em 80 imagens (seção 5.8).
 - Comparações entre etapas tratadas como exploratórias (seção 4).
 - Sensibilidade da CNN desigual entre grupos de imagens: ~38% nos 100 melanomas do início e do
   fim da pasta de teste, ~100% nos demais (histórico, 2026-11-15).
@@ -531,7 +531,7 @@ Grad-CAM), e não só um rótulo.
 | P1–P5 e técnicas alternativas (incl. correção do P2), S, F (seção 3.1), artefatos sintéticos | Renan | `pdi/*` |
 | Protocolo de treino (5.7); cenários A, L, T, C, V, S; CNN; Grad-CAM; simulador modo "base inteira" | Guilherme | `training/*`, `results/`, tabelas e gráficos |
 | Engine de cenários; sistema web completo (6 páginas da seção 7.1); API, fila de experimentos e resultados; P0; README, release e pacote de entrega (7.3) | Carlos | `pipeline.py`, `compare.py`, `api`, `web`, `justfile`, `README.md` |
-| Anotação das 80 máscaras (5.8), anotador único | Carlos (desenhadas por IA a pedido dele) | `experiments/mascaras/` |
+| Anotação das 80 máscaras (5.8), anotador único | Carlos (responsável) | `experiments/mascaras/` |
 | Apresentação (15 min) | todos | slides seguindo os 9 tópicos do enunciado |
 
 ## 10. Critérios de pronto

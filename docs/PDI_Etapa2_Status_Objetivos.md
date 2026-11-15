@@ -9,7 +9,7 @@ Docker com GPU). Critério do plano: **cumprido**, **parcial** ou **não cumprid
 | # | Objetivo específico (Etapa 1) | Status | Evidência |
 |---|---|---|---|
 | 1 | Investigar e implementar pré-processamento (remoção de pelos, normalização de cor, realce) e avaliar o efeito nas etapas seguintes | **Cumprido** | P0–P5 implementados com técnicas alternativas (T1–T5); métricas locais por etapa e ablação acumulativa (A) e por remoção (L) |
-| 2 | Implementar e avaliar a segmentação automática (limiarização + morfologia) contra máscaras de referência | **Parcial** | S1–S4 avaliados em 60 máscaras do teste; a referência não foi anotada manualmente pela equipe, como previsto (plano, seção 5.8) |
+| 2 | Implementar e avaliar a segmentação automática (limiarização + morfologia) contra máscaras de referência | **Parcial** | S1–S4 avaliados em 60 máscaras de referência do teste; sem Dice entre anotadores, previsto na proposta (plano, seção 5.8) |
 | 3 | Extrair características de forma, borda, cor e textura e treinar SVM e Random Forest | **Cumprido** | 38 características (`pdi.features`); C1 (SVM) e C2 (RF) com AUC 0,949 e 0,945 |
 | 4 | Treinar uma CNN por transferência de aprendizado e comparar com os tradicionais nas mesmas divisões e métricas | **Cumprido** | EfficientNet-B0 (ImageNet): C6 0,976 e C7 0,977, mesmas divisões, limiar e bootstrap |
 | 5 | Analisar interpretabilidade e robustez (Grad-CAM, ablação; lesão × artefatos) | **Cumprido** | Grad-CAM (V4), ablação (A/L/T), atalho da vinheta (V1, V2, V5); réguas e marcações só qualitativamente, na análise de erros |
@@ -43,9 +43,9 @@ Objetivo geral (protótipo que segmenta e classifica, comparando PDI tradicional
 - **Dice no teste (60 máscaras):** S3 (Otsu + morfologia, padrão) 0,70 [0,63; 0,77];
   S4 0,55; S1 0,54; S2 0,34. A morfologia ajuda nos dois métodos; a adaptativa fragmenta
   lesões grandes.
-- **Por que parcial:** a proposta previa máscaras anotadas manualmente pela equipe, com Dice
-  entre anotadores. As 80 máscaras de referência não foram anotadas manualmente pela equipe
-  e não há Dice entre anotadores (decisão registrada no plano, seção 5.8 e histórico).
+- **Por que parcial:** a proposta previa o Dice entre anotadores como referência do limite da
+  anotação; as 80 máscaras de referência têm anotador único, então essa medida não existe
+  (decisão registrada no plano, seção 5.8 e histórico).
 - Evidência: Resultados → Segmentação e Saídas visuais; `results/S*`, `experiments/mascaras/`.
 
 ### 3. Características e classificadores tradicionais — cumprido

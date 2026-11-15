@@ -45,8 +45,7 @@ Pronto (M1–M5 e o código do M6):
 - `pdi`: P0 + P1–P5 + S configuráveis; P2 corrigido e calibrado (`training.calibrate_p2`);
   características F (38 valores, `pdi.features`); artefatos sintéticos (`pdi.artifacts`).
 - `experiments/`: listas fixas geradas por `training.experiment_lists` (não refazer) e as 80
-  máscaras de referência em `experiments/mascaras/<conjunto>/` (anotador único, desenhadas
-  por IA a pedido da equipe; plano 5.8). Não existe mais divisão por anotador.
+  máscaras de referência em `experiments/mascaras/<conjunto>/` (anotador único; plano 5.8). Não existe mais divisão por anotador.
 - Engine: `training.run_scenario` (32 cenários), `training.report`, cache do pipeline por
   configuração em `results/_cache/` (fora do git; invalidado quando o código de `pdi` muda).
 - CNN: `training.cnn` (protocolo 5.7, Grad-CAM); ~14–16 s por época na 4060 Ti.
